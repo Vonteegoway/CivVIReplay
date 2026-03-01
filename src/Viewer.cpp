@@ -452,7 +452,7 @@ void Viewer::showMainMenu()
                 filter = filter == FILTER_APPEAL ? FILTER_NONE : FILTER_APPEAL;
             ImGui::EndMenu();
         }
-        
+
         if (ImGui::BeginMenu("Statistics"))
         {
             /*ImGui::Checkbox("Economic", &bDrawEconomicStats);
@@ -478,7 +478,7 @@ void Viewer::showMainMenu()
             }
             ImGui::EndMenu();
         }
-        
+
         ImGui::EndMainMenuBar();
     }
 
@@ -540,7 +540,7 @@ void Viewer::showMainMenu()
             {
                 saveFile += "Temp";
             }
-            
+
             std::ofstream output(saveFile, std::ios::binary);
             cereal::BinaryOutputArchive oarchive(output); // Create an output archive
             oarchive(loader); // Write the data to the archive
@@ -621,7 +621,7 @@ bool Viewer::LoadAssets()
         sprintf(path, "%s\\%s\\%s.png", selected_path, a.folderName, a.imageName);
         if (a.LoadAsset(path))
             count++;
-        
+
         if (count >= 256)
         {
             return false;
@@ -754,7 +754,7 @@ void Viewer::DrawGUI(){
             ImGui::Text("Please close Civilization before running civreplay");
             ImGui::End();
         }
-        else 
+        else
 #endif
         if (loader.States[iCurrentState].error == "")
         {
@@ -852,11 +852,11 @@ void Viewer::getPos(const Tile& Tile, float zoom, OUT float& posX, OUT float& po
 void Viewer::DrawHexagon(const ImColor& color, float zoom, const ImVec2& scroll, const ImVec2& pos)
 {
     float hexagonePos[12] = {
-        0.f, -104.f, 
-        90.f, -52.f, 
-        90.f, 52.f, 
+        0.f, -104.f,
+        90.f, -52.f,
+        90.f, 52.f,
         0.f, 104.f,
-        -90.f, 52.f, 
+        -90.f, 52.f,
         -90.f, -52.f
     };
     ImDrawList* draw_list = ImGui::GetWindowDrawList();
@@ -1473,7 +1473,7 @@ void Viewer::DrawMap() {
         float posX = tilePos[iTile].x;
         float posY = tilePos[iTile].y;
         //--
-        const int groupPos[6][12] =
+        const float groupPos[6][12] =
         {
             {0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f},
             {-40.f, 0.f, 40.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f},
@@ -1563,7 +1563,7 @@ void Viewer::DrawMap() {
                 }
             }
         }
-        //-- 
+        //--
         if (t.pCity)
         {
             const City& c = *t.pCity;
@@ -1617,7 +1617,7 @@ void Viewer::DrawMap() {
 void Viewer::DrawMinimap() {
     CivVIState& State = loader.States[iCurrentState];
     float zoomMinimap = (float)minimapSize / 100;
-    
+
     float width = State.width * HEX_WIDTH * zoomMinimap;
     float height = ((State.tiles.size() / State.width) + 10) * HEX_HEIGHT * 2/3 * zoomMinimap;
 
@@ -2538,7 +2538,7 @@ void Viewer::DrawMapStats()
 
 void Viewer::DrawDatabaseInfo()
 {
-    if (!pTables) 
+    if (!pTables)
     {
         pTables = GetTables();
         return;
@@ -2563,7 +2563,7 @@ void Viewer::DrawDatabaseInfo()
                     TABLE::INSTANCE::VALUE Value = Instance.Values[iValue];
                     const TABLE::DESCRIPTOR& Descriptor = *Instance.pTable->Descriptors[iValue];
                     if (Descriptor.Flags.bPrimaryKey && Descriptor.Type == TABLE::DESCRIPTOR::TEXT) {
-                        if (conceptFilter.PassFilter(Value.szValue)) 
+                        if (conceptFilter.PassFilter(Value.szValue))
                         {
                             DrawInstance(Instance, 1);
                             break;
@@ -3209,7 +3209,7 @@ void DrawResumeGeneral(Viewer& v, int iPlayer)
     CivVIState& State = loader.States[v.iCurrentState];
     PlayerInfo& playerInfo = State.pGame->playersInfo[iPlayer];
     const Player& p = State.players[iPlayer];
-    ImVec4 teamColored[] = { ImVec4(220.0f / 255.f, 15.0f / 255.f, 20.0f / 255.f, 1.0f), 
+    ImVec4 teamColored[] = { ImVec4(220.0f / 255.f, 15.0f / 255.f, 20.0f / 255.f, 1.0f),
                              ImVec4(10.0f / 255.f, 80.0f / 255.f, 225.0f / 255.f, 1.0f),
                              ImVec4(115.0f / 255.f, 160.0f / 255.f, 230.0f / 255.f, 1.0f),
                              ImVec4(255.0f / 255.f, 120.0f / 255.f, 5.0f / 255.f, 1.0f),
@@ -3644,7 +3644,7 @@ void Viewer::DrawInfo() {
                 if (t.resource != -1)
                     ImGui::Text("resource : %s (%d)", loader.assets[t.resource].name, t.resourceCount);
                 ImGui::Text("Yield : ");
-                
+
                 for (std::map<unsigned int, unsigned int>::const_iterator it = t.yields.begin(); it != t.yields.end(); it++)
                 {
                     if (!it->second)
@@ -3717,7 +3717,7 @@ void Viewer::DrawNavigation() {
         {
             ImGui::Text(loader.States[iCurrentState].error.c_str());
         }
-        
+
         if (!bAutomatic)
         {
             if (ImGui::Button("Play")) {
@@ -3754,18 +3754,18 @@ void Viewer::DrawNavigation() {
             dt = localtime(&rawtime);
             char buffer[30];
             strftime(buffer, sizeof(buffer), "%d/%m/%y %H:%M", dt);
-            ImGui::Text("%s", buffer); 
+            ImGui::Text("%s", buffer);
             ImGui::Text("%s", Game.multiPlayer ? "Multiplayer" : "SinglePlayer");
         }
     }
     ImGui::End();
-    
+
 }
 
 void DrawArrayPacket(CivVIPacket& packet)
 {
     char title[100];
-    sprintf(title, "%x (%d)", packet.marker, packet.packets.size());
+    sprintf(title, "%x (%u)", packet.marker, packet.packets.size());
     //ImGui::SetNextTreeNodeOpen(true)
     if (ImGui::TreeNode(title))
     {
@@ -3839,9 +3839,9 @@ void Viewer::Start(HINSTANCE hInstance, unsigned int Width, unsigned int Height)
     glfwSetErrorCallback(glfw_error_callback);
     if (!glfwInit())
         return;
-    
+
     GLFWwindow* window = glfwCreateWindow(Width, Height, "CivReplay", nullptr, nullptr);
-    glfwMakeContextCurrent(window); 
+    glfwMakeContextCurrent(window);
     glfwSwapInterval(1);
 
 

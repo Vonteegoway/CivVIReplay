@@ -133,7 +133,7 @@ void DistrictSimulator::Draw()
 		ImGui::Spacing();
 
 		float width = ImGui::GetWindowWidth();
-		int districtsType[] = { 0x8a32007d,0x71d9cd60,0x32b15d10,0x66db35b9,0xbe8c19bb,0x762430e5,0x885fdf1e,0xcbecc739,0xddbde5ca,0x9ac880cb,0xb92c62a7,0x41ded114,0x7aa7390d,0xc1ac5af9,0x98117336,0xe317d371,0x5dbcdc9e,0xe0ea131d };
+		unsigned int districtsType[] = { 0x8a32007d,0x71d9cd60,0x32b15d10,0x66db35b9,0xbe8c19bb,0x762430e5,0x885fdf1e,0xcbecc739,0xddbde5ca,0x9ac880cb,0xb92c62a7,0x41ded114,0x7aa7390d,0xc1ac5af9,0x98117336,0xe317d371,0x5dbcdc9e,0xe0ea131d };
 		float posX = ImGui::GetCursorPosX();
 		for (int iDistrict = 0; iDistrict < 18; iDistrict++)
 		{
@@ -159,7 +159,7 @@ void DistrictSimulator::Draw()
 		if (v.iSelectedTile != -1)
 		{
 			Tile& t = State.tiles[v.iSelectedTile];
-			
+
 			ImGui::Spacing();
 			if (t.pDistrict)
 			{
