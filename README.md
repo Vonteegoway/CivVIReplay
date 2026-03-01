@@ -16,6 +16,8 @@ If you are interested in Civilization VI multiplayer, you can explore community 
 
 The project was developed as both a practical tool for the multiplayer ecosystem and a technical exploration of binary parsing, structured data modeling, and rendering architecture using modern C++ (C++17).
 
+![Replay Visualization](assets/screenshots/replay_view.png "CivVIReplay in action")
+
 ---
 
 ## ✨ Features
@@ -59,7 +61,7 @@ Each dependency remains under its respective license. Please refer to their offi
 
 ## 🏗 Project Structure
 
-
+```
 CivVIReplay/
 │
 ├── src/ # Main application source files
@@ -76,6 +78,7 @@ CivVIReplay/
 ├── assets/ # Runtime resources (fonts, images, shaders)
 ├── lib/ # Precompiled libraries (e.g., glfw3_mt.lib)
 └── CMakeLists.txt
+```
 
 ---
 
