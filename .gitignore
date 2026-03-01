@@ -1,0 +1,22 @@
+# ----------------------------
+# Build directories
+# ----------------------------
+build/
+out/
+Debug/
+Release/
+
+# ----------------------------
+# CMake generated files
+# ----------------------------
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+Makefile
+
+# ----------------------------
+# Visual Studio user files
+# ----------------------------
+.vs/
+*.vcxproj.user
+*.suo

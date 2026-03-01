@@ -1,0 +1,17 @@
+#version 450
+
+#extension GL_ARB_separate_shader_objects : enable
+#extension GL_ARB_shading_language_420pack : enable
+
+layout(push_constant) uniform ModelView {
+	mat4 projModelViewMatrix;
+};
+
+layout(location = 0) in vec3 inPosition;
+layout(location = 1) in vec2 inUV;
+layout(location = 2) in vec3 inNormal;
+layout(location = 3) in vec3 inTangent;
+ 
+void main() {
+   gl_Position = projModelViewMatrix * vec4(inPosition, 1.0);
+}

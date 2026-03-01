@@ -1,0 +1,79 @@
+#pragma once
+#include <mutex>
+#include <queue>
+#include "CivVIState.h"
+#include "CivicTech.h"
+#include "Asset.h"
+#include <experimental/filesystem>
+namespace fs = std::experimental::filesystem;
+#include "cereal/types/vector.hpp"
+#include "cereal/types/map.hpp"
+
+struct SaveLoader {
+	template<class Archive>
+	void save(Archive& archive) const
+	{
+		archive(loadedStateCount, CEREAL_NVP(States), CEREAL_NVP(Games));
+	}
+
+	template<class Archive>
+	void load(Archive& archive)
+	{
+		archive(loadedStateCount, CEREAL_NVP(States), CEREAL_NVP(Games));
+
+		for (int iState = 0; iState < States.size(); iState++)
+		{
+			CivVIGame& Game = Games[(int)States[iState].pGame];
+			CivVIState& State = States[iState];
+
+			State.pGame = &Game;
+			State.UpdatePointer(Game);
+			State.ComputeDistrictProxi(Game, assets);
+			State.ComputeCityLine();
+			State.ComputeTileYields(assets);
+		}
+		for (int iState = 1; iState < States.size(); iState++)
+		{
+			States[iState].pGame->UpdateStats(States[iState - 1], States[iState], assets);
+		}
+	}
+
+	void init();
+
+	int loadedStateCount;
+	bool stop;
+	bool endLoadCivDb;
+
+	const std::string defaultCivPath;	
+	const std::string defaultBBGPath;
+	fs::path civPath = "C:/Program Files (x86)/Steam/SteamApps/common/Sid Meier's Civilization VI/";
+	fs::path bbgPath = "C:/Program Files (x86)/Steam/SteamApps/workshop/content/289070/2865001760/";
+	bool steamInstall = false;
+	bool isValidBBGPath();
+	bool isValidCivPath();
+	std::wstring RootFolder;
+	std::wstring WorkshopFolder;
+
+	std::mutex mtx;
+	std::queue<std::string> paths;
+
+	std::vector<CivVIState> States;
+	std::map<int, CivVIGame> Games;
+
+	void SetupTreesManually();
+	std::map<unsigned int, CivicTech> techTree2;
+	std::map<unsigned int, CivicTech> civicTree2;
+
+	Assets assets;
+
+	void LoadSave_WithoutAsset(bool untilEnd);
+	void LoadSave(bool untilEnd = false);
+	void Close(); 
+	
+	void findCivPath();
+
+
+#ifdef _DEBUG
+	CivVIParser ParserCpy;
+#endif
+};
