@@ -16,7 +16,7 @@ If you are interested in Civilization VI multiplayer, you can explore community 
 
 The project was developed as both a practical tool for the multiplayer ecosystem and a technical exploration of binary parsing, structured data modeling, and rendering architecture using modern C++ (C++17).
 
-![Replay Visualization](assets/screenshots/replay_view.png "CivVIReplay in action")
+![Replay Visualization](assets/screenshot/mainWindow.png "CivVIReplay in action")
 
 ---
 
