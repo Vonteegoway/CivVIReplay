@@ -22,7 +22,7 @@ void create_minidump(struct _EXCEPTION_POINTERS* apExceptionInfo)
     ExInfo.ExceptionPointers = apExceptionInfo;
     ExInfo.ClientPointers = FALSE;
 
-    const DWORD Flags = MiniDumpNormal | 
+    const DWORD Flags = MiniDumpNormal |
         MiniDumpWithFullMemoryInfo |
         MiniDumpWithHandleData |
         MiniDumpWithUnloadedModules |

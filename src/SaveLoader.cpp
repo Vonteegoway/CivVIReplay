@@ -214,8 +214,8 @@ void SaveLoader::init()
         //LogA("Civ is installed on Epic or not installed");
         civPath = getInstalledCivEpic();
         steamInstall = false;
-    }    
-    
+    }
+
     wchar_t my_documents[MAX_PATH];
     HRESULT result = SHGetFolderPathW(NULL, CSIDL_PERSONAL, NULL, SHGFP_TYPE_CURRENT, my_documents);
     bbgPath = std::wstring(my_documents) + L"\\My Games\\Sid Meier's Civilization VI\\Mods\\BetterBalancedGame";
@@ -468,17 +468,18 @@ void SaveLoader::LoadSave(bool untilEnd)
         if (p == "Steam")
         {
             RootFolder = civPath.wstring() + L"SteamApps\\common\\Sid Meier's Civilization VI\\";
-            WorkshopFolder = civPath.wstring() + L"SteamApps\\workshop\\content\\289070\\2865001760\\";
+            WorkshopFolder = civPath.wstring() + L"SteamApps\\workshop\\content\\289070\\";
         }
         else if (p == "SteamApps")
         {
             RootFolder = civPath.wstring() + L"common\\Sid Meier's Civilization VI\\";
-            WorkshopFolder = civPath.wstring() + L"workshop\\content\\289070\\2865001760\\";
+            WorkshopFolder = civPath.wstring() + L"workshop\\content\\289070\\";
+
         }
         else if (p == "Sid Meier's Civilization VI")
         {
             RootFolder = civPath.wstring();
-            WorkshopFolder = civPath.parent_path().parent_path().parent_path().wstring() + L"\\workshop\\content\\289070\\2865001760\\";
+            WorkshopFolder = civPath.parent_path().parent_path().parent_path().wstring() + L"\\workshop\\content\\289070\\";
         }
 
     }

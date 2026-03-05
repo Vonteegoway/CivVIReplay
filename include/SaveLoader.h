@@ -44,10 +44,10 @@ struct SaveLoader {
 	bool stop;
 	bool endLoadCivDb;
 
-	const std::string defaultCivPath;	
+	const std::string defaultCivPath;
 	const std::string defaultBBGPath;
 	fs::path civPath = "C:/Program Files (x86)/Steam/SteamApps/common/Sid Meier's Civilization VI/";
-	fs::path bbgPath = "C:/Program Files (x86)/Steam/SteamApps/workshop/content/289070/2865001760/";
+	fs::path bbgPath = "C:/Program Files (x86)/Steam/SteamApps/workshop/content/289070/";
 	bool steamInstall = false;
 	bool isValidBBGPath();
 	bool isValidCivPath();
@@ -68,8 +68,8 @@ struct SaveLoader {
 
 	void LoadSave_WithoutAsset(bool untilEnd);
 	void LoadSave(bool untilEnd = false);
-	void Close(); 
-	
+	void Close();
+
 	void findCivPath();
 
 

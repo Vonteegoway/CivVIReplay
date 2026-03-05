@@ -742,7 +742,7 @@ void Viewer::DrawGUI(){
 
         uint64_t timeFromSave = (unsigned int)(current - loader.States[iCurrentState].timestamp);
 #ifndef _DEBUG
-        if (loader.States[iCurrentState].pGame->multiPlayer && timeFromSave < 30*60)
+        /*if (loader.States[iCurrentState].pGame->multiPlayer && timeFromSave < 30 * 60)
         {
             ImGui::Begin("Error");
             ImGui::Text("Save is too recent. Please wait a little bit");
@@ -754,7 +754,7 @@ void Viewer::DrawGUI(){
             ImGui::Text("Please close Civilization before running civreplay");
             ImGui::End();
         }
-        else
+        else*/
 #endif
         if (loader.States[iCurrentState].error == "")
         {
@@ -940,6 +940,7 @@ bool Viewer::DrawImage(unsigned int type, float posX, float posY, float zoom, Im
     {
         ImDrawList* draw_list = ImGui::GetWindowDrawList();
         draw_list->AddRectFilled(ImVec2(posX+ 50.f * zoom, posY+ 60.f * zoom), ImVec2(posX+ 130.f * zoom, posY+ 140.f * zoom), ImGui::GetColorU32(defaultColor));
+
         return false;
     }
 
@@ -1688,21 +1689,9 @@ void Viewer::DrawMinimap() {
             if (t.terrain == 0x5f83b433 || t.terrain == 0xa3b9a8f0 || t.terrain == 0x5490bef9 || t.terrain == 0xdf49ddbd || t.terrain == 0x29b146f4 || t.feature == 0xa5329cb5)
             {
                 DrawHexagon(ImColor(0.f / 256.f, 0.f / 256.f, 0.f / 256.f, alpha * 0.6), zoomMinimap, pos, tilePos);
-                /*float hexagonePos[6] = {
-                    0.f, -50.f, 100.f, 50.f, -100.f, 50.f
-                };
-                const Tile& selectedTile = State.tiles[iTile];
-                float posX, posY;
-                getPos(selectedTile, zoomMinimap, OUT posX, OUT posY);
-                ImDrawList* draw_list = ImGui::GetWindowDrawList();
-                ImVec2 SelectedTilePos[3];
-                for (int i = 0; i < 3; i++)
-                {
-                    SelectedTilePos[i] = ImVec2(posX - pos.x + (HEX_WIDTH / 2 + hexagonePos[i * 2]) * zoomMinimap, posY - pos.y + (HEX_HEIGHT / 2 + hexagonePos[i * 2 + 1]) * zoomMinimap);
-                }
-                draw_list->AddTriangleFilled(SelectedTilePos[0], SelectedTilePos[1], SelectedTilePos[2], ImVec4(0.f, 0.f, 0.f, 1.f));*/
             }
         }
+
         ImDrawList* draw_list = ImGui::GetWindowDrawList();
         draw_list->Flags = ImDrawListFlags_None;
         float factor = zoomMinimap / zoom;
@@ -3171,6 +3160,7 @@ void DrawResumeInternal(Viewer& v, resumeFunc f)
             if (!p.cities.size() && !p.units.size())
                 continue;
             v.DrawImage(playerInfo.leader, 0.f, 0.f, 0.3f, ImVec4(0.f, 0.f, 1.f, 1.f));
+
 
             if (ImGui::IsWindowHovered() && ImGui::IsItemClicked())
             {

@@ -501,6 +501,9 @@ void UpdateInstances() {
 							VkAssert(Modification.ValueGroups->Count == 1);
 							for (unsigned int iValue = 0; iValue < Modification.ValueGroups[0]->Count; ++iValue) {
 								int iDescriptor = Modification.Descriptors[iValue];
+								if (iDescriptor == -1){
+									continue;
+								}
 								//--
 								const TABLE::DESCRIPTOR& Descriptor = *Table.Descriptors[iDescriptor];
 								const MODIFICATION::VALUE& Value = Modification.ValueGroups[0][iValue];

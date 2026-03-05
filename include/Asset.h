@@ -40,8 +40,8 @@ struct Asset
 
 	char name[256];
 	char imageName[256];
-	char folderName[256]; 
-	
+	char folderName[256];
+
 	TABLE::INSTANCE* dbValue;
 
 	Asset()

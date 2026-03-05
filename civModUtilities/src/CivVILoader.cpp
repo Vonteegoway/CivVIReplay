@@ -486,7 +486,16 @@ namespace MOD_UTILITIES {
 		LoadCivBaseState(RootFolder);
 		//--
 		LogA("[Civ6ModUtilities]Parsing BBG\n");
-		if (LoadMod(WorkshopFolder, L"BetterBalancedGame"))
+		wchar_t BBGFolder[256] = L"";
+		_swprintf(BBGFolder, L"%s\\2865001760\\", WorkshopFolder);
+		bool loadedBBG = LoadMod(BBGFolder, L"BetterBalancedGame");
+		wchar_t BBGExpandedFolder[256] = L"";
+		_swprintf(BBGExpandedFolder, L"%s\\3533091092\\", WorkshopFolder);
+		bool loadedBBGExpanded = LoadMod(BBGExpandedFolder, L"BBGExpanded");
+		wchar_t BBMFolder[256] = L"";
+		_swprintf(BBMFolder, L"%s\\3179425402\\", WorkshopFolder);
+		bool loadedBBM = LoadMod(BBMFolder, L"BBM_137");
+		if (loadedBBG && loadedBBGExpanded && loadedBBM)
 		{
 			LogA("[Civ6ModUtilities]Applying BBG\n");
 			UpdateInstances();

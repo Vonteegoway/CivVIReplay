@@ -129,7 +129,7 @@ void Assets::InitAsset(const char* _folder, const char* _name, TABLE::INSTANCE* 
 	strcpy(assets[crc].folderName, _folder);
 	assets[crc].dbValue = dbValue;
 
-	
+
     char selected_path[] = "./image";
 	char path[512];
 
