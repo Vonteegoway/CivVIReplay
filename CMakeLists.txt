@@ -42,7 +42,7 @@ add_subdirectory(civmodutilities)
 # -----------------------------
 # Executable
 # -----------------------------
-add_executable(${PROJECT_NAME} ${SOURCES} ${IMGUI_SOURCES})
+add_executable(${PROJECT_NAME} ${SOURCES} ${IMGUI_SOURCES} assets/resources/CivVIReplay.rc)
 
 # Force proper C++ linkage and subsystem
 set_target_properties(${PROJECT_NAME} PROPERTIES

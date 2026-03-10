@@ -15,7 +15,7 @@
 #endif
 
 
-#define CHUNK 65536 
+#define CHUNK 65536
 
 byte Civ6[] = { 0x43, 0x49, 0x56, 0x36 };
 byte MAP_BEGIN[] = { 0x0A, 0, 0, 0, 0x0B, 0, 0, 0, 0x0C, 0, 0, 0, 0x0D, 0, 0, 0, 0x0E, 0, 0, 0, 0x0F, 0, 0, 0, 0x06, 0, 0, 0 };
@@ -164,7 +164,7 @@ unsigned int CivVIPacket::getInt(unsigned int marker)
 void UpdatePlayerColor(PlayerInfo* playersInfo)
 {
     std::map<unsigned int, std::vector<int>> colors =
-    { 
+    {
         {0x991cff9d, {1,42,108,255, 249,249,249,255, 202,20,21,255, 249,249,249,255, 249,249,249,255, 1,42,108,255, 1,42,108,255, 202,20,21,255} },
         {0x2f120ae4, {247,216,1,255, 21,108,48,255, 21,108,48,255, 121,224,119,255, 121,224,119,255, 24,24,24,255, 134,114,2,255, 97,191,34,255} },
         {0x4111e7e3, {97,191,34,255, 247,216,1,255, 97,191,34,255, 1,42,108,255, 247,216,1,255, 21,108,48,255, 1,42,108,255, 121,224,119,255} },
@@ -385,7 +385,7 @@ void CivVIParser::SetGameInfo(CivVIGame& Game)
     packets[iPacket].copyString(0x584C6027, Game.map);
     packets[iPacket].copyString(0x5D9B099, Game.gamespeed);
     packets[iPacket].copyString(0xB835C40, Game.mapSize);
-    
+
     int multi = packets[iPacket].getInt(0X7C546F81);
     Game.multiPlayer = multi == 0x453F23E2;
 }
@@ -483,7 +483,7 @@ bool CivVIParser::ReadCompressed(OUT CivVIPacket& result)
                 compressed.insert(compressed.end(), out, out + have);
                 switch (ret) {
                     case Z_NEED_DICT:
-                        ret = Z_DATA_ERROR; 
+                        ret = Z_DATA_ERROR;
                     case Z_DATA_ERROR:
                     case Z_MEM_ERROR:
                         it += length;
@@ -588,7 +588,7 @@ bool CivVIParser::ParseEntry(OUT CivVIPacket& result, int iArray)
             ReadInt(result);
             break;
 
-        case 0x15: // on 2 byte ? int64? int -> int ? 
+        case 0x15: // on 2 byte ? int64? int -> int ?
             result.data.pointer = (void*)*it;
             it += 8;
             break;
@@ -723,7 +723,7 @@ void CivVIParser::ParseMap(std::vector<byte>& data, OUT int& width, OUT std::vec
                     {
                         it += 20; //C3 9B FA F9 03 00 00 00 00 00 00 00 00 00 00 00 02 00 00 00
                     }
-                }     
+                }
             }
         }
 
@@ -748,7 +748,7 @@ std::string readString(std::vector<byte>::iterator& it)
 {
 
     unsigned int count = buffToInteger(*it);
-    it += 4;    
+    it += 4;
     std::string str((char*)&(*it), count);
     it += count;
     return str;
@@ -865,7 +865,7 @@ void CivVIParser::ParseTrees(std::vector<byte>& data, std::vector<Node>& civicTr
     for (int i = 0; i < count + 1; i++)
     {
         int count2 = readInteger(it); //not sure on this one it was only the last
-        assert(count2 == 0x36);  
+        assert(count2 == 0x36);
         for (int j = 0; j < count2; j++)
         {
             int count3 = readInteger(it); // 00 or 02
@@ -931,7 +931,7 @@ void CivVIParser::ParseTrees(std::vector<byte>& data, std::vector<Node>& civicTr
 void CivVIParser::ParseVisibility(std::vector<byte>& data, OUT std::vector<Player>& players)
 {
     it = std::search(data.begin(), data.end(), VISIBILITY_BEGIN, VISIBILITY_BEGIN + 4);
-    it -= 4; //36/37 00 00 00 
+    it -= 4; //36/37 00 00 00
     //resource count
     readMap(it);
     readMap(it);
@@ -947,11 +947,11 @@ void CivVIParser::ParseVisibility(std::vector<byte>& data, OUT std::vector<Playe
         p.visible = readArray(it, 1, 0);
         it += 12; //05 00 00 00 26 10 35 11 00 00 00 00
         assertT(buffToInteger(*it) == p.visible.size());
-        it += 8; //B8 11 00 00 54 00 00 00 
+        it += 8; //B8 11 00 00 54 00 00 00
         p.inSightCount = readArray(it, 2, 0);
         it += 8; //CF 56 A3 F7 01 00 00 00
         assertT(buffToInteger(*it) == p.visible.size());
-        it += 8; //B8 11 00 00 54 00 00 00 
+        it += 8; //B8 11 00 00 54 00 00 00
         p.improvment = readArray(it, 2, 0);
         it += 8; //8F 28 80 D1 02 00 00 00
         assertT(buffToInteger(*it) == p.visible.size());
@@ -961,7 +961,7 @@ void CivVIParser::ParseVisibility(std::vector<byte>& data, OUT std::vector<Playe
         assertT(buffToInteger(*it) == p.visible.size());
         it += 8; //B8 11 00 00 54 00 00 00
         p.e = readArray(it, 2, 0);
-        it += 8; //BD BE F3 C1 04 00 00 00 
+        it += 8; //BD BE F3 C1 04 00 00 00
         assertT(buffToInteger(*it) == p.visible.size());
         it += 8; //B8 11 00 00 54 00 00 00
         p.inSightUnitCount = readArray(it, 2, 0);
@@ -1013,7 +1013,7 @@ void CivVIParser::ParseDisaster(std::vector<byte>& data, int width, IN_OUT std::
     }
 
     /*
-    
+
     int count = readInteger(it);
     for (int i = 0; i < count; i++)
     {
@@ -1116,7 +1116,7 @@ void CivVIParser::ParsePlayers(std::vector<byte>& data, OUT CivVIState* pState)
             it += 4;
 
             it += 8; // 00
-            it += 12; //02 00 00 00 00 00 01 00 01 01 00 00 
+            it += 12; //02 00 00 00 00 00 01 00 01 01 00 00
 
             unsigned int count2 = buffToInteger(*it);
             it += 4;
@@ -1158,11 +1158,11 @@ void CivVIParser::ParsePlayers(std::vector<byte>& data, OUT CivVIState* pState)
         readArray(it, 4, 0); //05
         readMap(it); //06
 
-        //CITIES 
+        //CITIES
         it += 33;
         assertT(buffToInteger(*it) == 0x10);
         it += 4;
-        it += 4; 
+        it += 4;
         unsigned int cityCount = buffToInteger(*it);
         it += 4;
         p.cities.resize(cityCount);
@@ -1251,7 +1251,7 @@ void CivVIParser::ParsePlayers(std::vector<byte>& data, OUT CivVIState* pState)
                 it += 4;
             }
 
-            it += 8; 
+            it += 8;
 
             readArray(it, 4, 0);//25
             readArray(it, 4, 0);//25
@@ -1300,16 +1300,16 @@ void CivVIParser::ParsePlayers(std::vector<byte>& data, OUT CivVIState* pState)
             it += 18; //00
             it += 4; //FF
             it += 16; //0A 00 00 00 00 00 02 00 02 00 03 00 00 00 00 00
-            
+
             readMap(it);//06
             readMap(it);//06
             it += 12;
             readMap(it);//11
             readMap(it);//36
-            
+
             it += 4; //10
             count = buffToInteger(*it);
-            it += 4; // productions 
+            it += 4; // productions
             for (int i = 0; i < count; i++)
             {
                 assertT(buffToInteger(*it) == 0x2C0F4A46);
@@ -1431,7 +1431,7 @@ void CivVIParser::ParsePlayers(std::vector<byte>& data, OUT CivVIState* pState)
             it++;
             it += 4;//64
 
-            it += 3; //1D 00 00 
+            it += 3; //1D 00 00
             count = readInteger(it);
             for (int i = 0; i < count; i++)
             {
@@ -1553,7 +1553,7 @@ void CivVIParser::ParsePlayers(std::vector<byte>& data, OUT CivVIState* pState)
             it += 72; //EC 8A 9A E5 25 01 00 00 00 01 01 01 01 01 01 01 00+
         }
 
-        // TOOLTIP 
+        // TOOLTIP
         count = buffToInteger(*it);
         assertT(count == 64);
         it += 4;
@@ -1577,7 +1577,7 @@ void CivVIParser::ParsePlayers(std::vector<byte>& data, OUT CivVIState* pState)
         }
         for (int i = 0; i < 64; i++) {
             it += 4;
-        }        
+        }
         for (int i = 0; i < 64; i++) {
             it += 4;
         }
@@ -1633,14 +1633,14 @@ void CivVIParser::ParsePlayers(std::vector<byte>& data, OUT CivVIState* pState)
         {
             it += 4; //00
         }
-        
+
         count = readInteger(it); // 40
         assertT(count == 64);
         for (int i = 0; i < count; i++)
         {
             it += 4; //FF
         }
-        
+
         count = readInteger(it);
         for (int i = 0; i < count; i++)
         {
@@ -1682,7 +1682,7 @@ void CivVIParser::ParsePlayers(std::vector<byte>& data, OUT CivVIState* pState)
             unsigned int count2 = readInteger(it);
             for (int k = 0; k < count2; k++)
             {
-                it += 4; //55 50 DF FA 
+                it += 4; //55 50 DF FA
                 unsigned int count3 = readInteger(it);
                 for (int l = 0; l < count3; l++)
                 {
@@ -1746,7 +1746,7 @@ void CivVIParser::ParsePlayers(std::vector<byte>& data, OUT CivVIState* pState)
             it += 4;
             for (int k = 0; k < count2; k++)
             {
-                it += 16; 
+                it += 16;
             }
             readMap(it);//0A // personnages illustres
 
@@ -1806,7 +1806,7 @@ void CivVIParser::ParsePlayers(std::vector<byte>& data, OUT CivVIState* pState)
         it++;
         readArray(it); //0D 00 00 00 9A 87 93 6E
         readMap(it); //0D 00 00 00 9A 87 93 6E -> Government used
-        readMap(it); // -> government card 
+        readMap(it); // -> government card
         for(int i=0;i<5;i++)
             readArray(it); //8F 00 00 00 4F 96 0A 6B
 
@@ -1945,12 +1945,12 @@ void CivVIParser::ParsePlayers(std::vector<byte>& data, OUT CivVIState* pState)
         // SPY AND SPYING
 
         assertT(buffToInteger(*it) == 0x11);
-        it += 8; //11 00 00 00 02 00 00 00 
+        it += 8; //11 00 00 00 02 00 00 00
 
         count = readInteger(it); //SPY
         for (int i = 0; i < count; i++)
         {
-            it += 24; //11 00 00 00 00 00 00 00 A6 DA 73 23 0E 00 00 00 02 00 00 00 FF FF FF FF 
+            it += 24; //11 00 00 00 00 00 00 00 A6 DA 73 23 0E 00 00 00 02 00 00 00 FF FF FF FF
             unsigned int count2 = readInteger(it); //promote spy
             for (int k = 0; k < count2; k++)
             {
@@ -1972,12 +1972,12 @@ void CivVIParser::ParsePlayers(std::vector<byte>& data, OUT CivVIState* pState)
         count = readInteger(it);
         for (int i = 0; i < count; i++)
         {
-            it += 16; //11 00 00 00 05 00 00 00 02 00 03 00 5C 00 00 00 01 00 00 00 
+            it += 16; //11 00 00 00 05 00 00 00 02 00 03 00 5C 00 00 00 01 00 00 00
         }
         it += 4; //00/01
         it += 4; //00
         it += 4; //00
-        count = readInteger(it); 
+        count = readInteger(it);
         for (int i = 0; i < count; i++)
         {
             it += 44; //11 00 00 00 A6 DA 73 23 15 00 00 00 01 00 00 00 00 00 00 00 58 00 00 00 19 00 00 00 09 00 00 00 07 00 00 00 FF FF FF FF 00 00 00 00 17 00 53 00
@@ -2092,7 +2092,7 @@ void CivVIParser::ParsePlayers(std::vector<byte>& data, OUT CivVIState* pState)
         count = readInteger(it);
         for (int i = 0; i < count; i++)
         {
-            it += 13; //00 00 00 00 A7 1F B0 2B FF FF FF FF 01 
+            it += 13; //00 00 00 00 A7 1F B0 2B FF FF FF FF 01
             readString(it); //LOC_DVP_TOOLTIP_AGREEING_RESOLUTIONS
             it += 22;
         }
@@ -2137,14 +2137,14 @@ void CivVIParser::ParsePlayers(std::vector<byte>& data, OUT CivVIState* pState)
         }
         it += 16; //16 00 00 00 01 00 01 00 10 00 00 00 18 00 00 00
 
-        //UNITS 
+        //UNITS
         count = readInteger(it);
         p.units.resize(count);
         for (int iUnit = 0; iUnit < p.units.size(); iUnit++)
         {
             Unit& unit = p.units[iUnit];
             unit.id = readInteger(it);
-            count = buffToInteger(*it); //Not sure on this one ... 
+            count = buffToInteger(*it); //Not sure on this one ...
             it += 4;
             it += 4;
 
@@ -2177,7 +2177,7 @@ void CivVIParser::ParsePlayers(std::vector<byte>& data, OUT CivVIState* pState)
 
             //Lot's of change here between saves
             count = readInteger(it);
-            for (int i = 0; i < count; i++) 
+            for (int i = 0; i < count; i++)
             {
                 it += 8;
             }
@@ -2242,7 +2242,7 @@ void CivVIParser::ParsePlayers(std::vector<byte>& data, OUT CivVIState* pState)
             }
             it += 70;
 
-            count = buffToInteger(*it); 
+            count = buffToInteger(*it);
             it += 4;
             for (int i = 0; i < count; i++)
             {
@@ -2285,19 +2285,19 @@ void CivVIParser::ParsePlayers(std::vector<byte>& data, OUT CivVIState* pState)
             //assertT(buffToInteger(*it) == 0x3F);
             readArray(it); //3F 00 00 00 1E 3B 63 1F
 
-            it += 16; //05 00 00 00 FF FF FF FF FF FF 02 00 FF FF FF FF 
+            it += 16; //05 00 00 00 FF FF FF FF FF FF 02 00 FF FF FF FF
 
-            count = readInteger(it, 3); //01 00 00 80 
+            count = readInteger(it, 3); //01 00 00 80
             it++;
             for (int i = 0; i < count; i++)
             {
-                it += 26; //01 00 00 00 07 CA 81 A2 00 00 02 00 00 00 00 00 00 00 00 00 00 00 FF FF FF FF 
+                it += 26; //01 00 00 00 07 CA 81 A2 00 00 02 00 00 00 00 00 00 00 00 00 00 00 FF FF FF FF
             }
         }
         it += 4;
 
         count = buffToInteger(*it);
-        it += 4; 
+        it += 4;
         for (int i = 0; i < count; i++)
         {
             it += 4;
@@ -2346,25 +2346,25 @@ void CivVIParser::ParsePlayers(std::vector<byte>& data, OUT CivVIState* pState)
         count = readInteger(it); // 0x26
         for (int i = 0; i < count; i++)
         {
-            it += 12; //16/15 00 00 00 .. .. .. .. 16/15 00 00 00 
+            it += 12; //16/15 00 00 00 .. .. .. .. 16/15 00 00 00
         }
 
         count = readInteger(it);
         for (int i = 0; i < count; i++) // PROMOTION apostle!!
         {
-            it += 12; //16 00 00 00 E3 B4 38 2B 01 00 19 00 
+            it += 12; //16 00 00 00 E3 B4 38 2B 01 00 19 00
         }
 
-        count = readInteger(it); 
+        count = readInteger(it);
         for (int i = 0; i < count; i++)
         {
-            it += 12; //16 00 00 00 .. .. .. .. 16 00 00 00 
+            it += 12; //16 00 00 00 .. .. .. .. 16 00 00 00
         }
 
         count = readInteger(it);
         for (int i = 0; i < count; i++) // unit apostle ?
         {
-            it += 4; //8b d1 fd b9 
+            it += 4; //8b d1 fd b9
         }
 
         it += 32; //B1 22 37 FF seems interesting here
@@ -2392,7 +2392,7 @@ void CivVIParser::ParsePlayers(std::vector<byte>& data, OUT CivVIState* pState)
             assertT(buffToInteger(*it) == 6);
             readMap(it); //06 00
         }
-        it += 4; // 00;        
+        it += 4; // 00;
         for (int i = 0; i < 72; i++) //73???
         {
             assertT(buffToInteger(*it) == 6);
@@ -2474,14 +2474,14 @@ void CivVIParser::ParsePlayers(std::vector<byte>& data, OUT CivVIState* pState)
         readMap(it); //06 00
 
         it += 16;
-        readMap(it); //06 
-        readMap(it); //06 
+        readMap(it); //06
+        readMap(it); //06
 
         count = readInteger(it); //40
         for (int i = 0; i < count; i++)
         {
             it += 4; //00
-        } 
+        }
         count = readInteger(it); //00/01
         for (int i = 0; i < count; i++)
         {
@@ -2538,7 +2538,7 @@ void CivVIParser::ParsePlayers(std::vector<byte>& data, OUT CivVIState* pState)
             it += 2; //0020
             g.city = readInteger(it,2);
             it += 2;
-            it += 62; //00 and some 08 01        
+            it += 62; //00 and some 08 01
             it += 4;
             it += 4; //00 after maj
             unsigned int count2 = readInteger(it);
@@ -2557,7 +2557,7 @@ void CivVIParser::ParsePlayers(std::vector<byte>& data, OUT CivVIState* pState)
                 }
             }
             it += 4;
-            it++;   
+            it++;
         }
 
         it += 4;
@@ -2570,7 +2570,7 @@ void CivVIParser::ParsePlayers(std::vector<byte>& data, OUT CivVIState* pState)
         it += 64; // 09 00
         it += 4; //00
         it += 4; //00 after maj
-        
+
         count = buffToInteger(*it); // 40
         assertT(count == 64);
         it += 4;
@@ -2645,7 +2645,7 @@ void CivVIParser::ParsePlayers(std::vector<byte>& data, OUT CivVIState* pState)
         it += 24;
         it += 4;
 
-        count = buffToInteger(*it); 
+        count = buffToInteger(*it);
         it += 4;
         for (int i = 0; i < count; i++)
         {
@@ -2670,7 +2670,7 @@ void CivVIParser::ParsePlayers(std::vector<byte>& data, OUT CivVIState* pState)
             it += 4;
             for (int j = 0; j < count2; j++)
             {
-                it += 16; //01 00 00 00 FF FF FF FF 00 00 00 00 00 00 00 00 
+                it += 16; //01 00 00 00 FF FF FF FF 00 00 00 00 00 00 00 00
             }
             count2 = buffToInteger(*it); //6
             it += 4;
@@ -2697,7 +2697,7 @@ void CivVIParser::ParsePlayers(std::vector<byte>& data, OUT CivVIState* pState)
 
             count2 = buffToInteger(*it);
             it += 4;
-            it += 4; //00 ?? count on 8 bits ? 
+            it += 4; //00 ?? count on 8 bits ?
             for (int j = 0; j < count2; j++)
             {
                 it += 8;
@@ -2734,7 +2734,7 @@ void CivVIParser::ParsePlayers(std::vector<byte>& data, OUT CivVIState* pState)
             it += 4;
             for (int j = 0; j < count2; j++)
             {
-                it += 8; //06 00 02 00 00 00 01 00 
+                it += 8; //06 00 02 00 00 00 01 00
             }
             it += 12; //06 00 00 00 00 00 00 00 E6 FF FF FF
             it += 16; //00 with 1 19
@@ -2750,8 +2750,8 @@ void CivVIParser::ParsePlayers(std::vector<byte>& data, OUT CivVIState* pState)
                 it += 4; // j or index
                 it += 61; // useful info here !
             }
-            
-            
+
+
             count2 = buffToInteger(*it); //25
             it += 4;
             for (int j = 0; j < count2; j++)
@@ -2836,7 +2836,7 @@ void CivVIParser::ParsePlayers(std::vector<byte>& data, OUT CivVIState* pState)
         }
         readMap(it); //0D
 
-        //IMPROVEMENT 
+        //IMPROVEMENT
         count = buffToInteger(*it);
         it += 4;
         p.improvements.resize(count);
@@ -2957,7 +2957,7 @@ void CivVIParser::ParsePlayers(std::vector<byte>& data, OUT CivVIState* pState)
             unsigned int value = buffToInteger(*it);
             if (value == 0xffffffff)
             {
-                it += 21; //FF FF FF FF FF FF FF FF 00 00 00 00 00 00 00 00 00 00 00 00 00 
+                it += 21; //FF FF FF FF FF FF FF FF 00 00 00 00 00 00 00 00 00 00 00 00 00
             }
             else
             {
@@ -2982,7 +2982,7 @@ void CivVIParser::ParsePlayers(std::vector<byte>& data, OUT CivVIState* pState)
         it += 4;
         for (int i = 0; i < count; i++)
         {
-            readMap(it); // Diplo action 
+            readMap(it); // Diplo action
         }
         count = readInteger(it); //40 00
         for (int i = 0; i < count; i++)
@@ -2995,11 +2995,11 @@ void CivVIParser::ParsePlayers(std::vector<byte>& data, OUT CivVIState* pState)
             readArray(it);// diploaction
         }
 
-        count = readInteger(it); 
+        count = readInteger(it);
         for (int i = 0; i < count; i++)
         {
             //something about deal ?
-            it += 24; //01 00 00 00 50 00 00 00 04 00 00 00 83 97 3F C0 00 00 00 00 33 00 00 00 
+            it += 24; //01 00 00 00 50 00 00 00 04 00 00 00 83 97 3F C0 00 00 00 00 33 00 00 00
         }
 
         it += 8; // 00
@@ -3019,7 +3019,7 @@ void CivVIParser::ParsePlayers(std::vector<byte>& data, OUT CivVIState* pState)
         }
         it += 4; // 00
 
-        readMap(it); //06 
+        readMap(it); //06
 
         count = buffToInteger(*it); //05/00
         it += 4;
@@ -3063,9 +3063,9 @@ void CivVIParser::ParsePlayers(std::vector<byte>& data, OUT CivVIState* pState)
             it += 4;
             for (int j = 0; j < count2; j++)
             {
-                it += 4; // 46 27 0B 61 
+                it += 4; // 46 27 0B 61
             }
-            it += 4; //00 00 00 00 
+            it += 4; //00 00 00 00
         }
 
         count = buffToInteger(*it);
@@ -3111,12 +3111,12 @@ void CivVIParser::ParsePlayers(std::vector<byte>& data, OUT CivVIState* pState)
             it += 39; //maybe 5 * 7 array
 
 
-            readMap(it); //06 
-            readMap(it); //06 
-            readMap(it); //11 
-            readMap(it); //36 
-            readMap(it); //36 
-            readMap(it); //46 
+            readMap(it); //06
+            readMap(it); //06
+            readMap(it); //11
+            readMap(it); //36
+            readMap(it); //36
+            readMap(it); //46
         }
         it += 12;
         for (int i = 0; i < 4; i++)
@@ -3124,16 +3124,16 @@ void CivVIParser::ParsePlayers(std::vector<byte>& data, OUT CivVIState* pState)
             readArray(it); //10 00 00 00 26 C9 DE 38
         }
         readMap(it); //10 00 00 00 26 C9 DE 38
-        readMap(it); //06 
-        readMap(it); //06 
-        readMap(it); //35 00 00 00 78 A6 64 D3 
-        readMap(it); //35 00 00 00 78 A6 64 D3 
+        readMap(it); //06
+        readMap(it); //06
+        readMap(it); //35 00 00 00 78 A6 64 D3
+        readMap(it); //35 00 00 00 78 A6 64 D3
 
         it += 8;
 
         count = buffToInteger(*it); // 0B
         it += 4;
-        //info on units ? 
+        //info on units ?
         for (int i = 0; i < count; i++)
         {
             assertT(buffToInteger(*it) == 0x04);
@@ -3153,7 +3153,7 @@ void CivVIParser::ParsePlayers(std::vector<byte>& data, OUT CivVIState* pState)
         }
         it++; // 01?
 
-        readMap(it); //06 
+        readMap(it); //06
 
         it += 168; //01 00 00 00 iplayer
 
@@ -3171,13 +3171,13 @@ void CivVIParser::ParsePlayers(std::vector<byte>& data, OUT CivVIState* pState)
         }
         it += 21; //01 00 00 00 03 00 00 00 01 00 00 00 04 00 00 00 01 84 10 1B 8A
 
-        count = readInteger(it); // 40 
+        count = readInteger(it); // 40
         for (int i = 0; i < count; i++)
         {
             it++;
         }
 
-        count = readInteger(it); // 40 
+        count = readInteger(it); // 40
         for (int i = 0; i < count; i++)
         {
             it++;
@@ -3188,7 +3188,7 @@ void CivVIParser::ParsePlayers(std::vector<byte>& data, OUT CivVIState* pState)
         readMap(it); //07
 
         it += 4;
-         
+
         it += 4;// 10
 
         it += 4; //00 or 08 00 00
@@ -3207,13 +3207,13 @@ void CivVIParser::ParsePlayers(std::vector<byte>& data, OUT CivVIState* pState)
             for (int k = 0; k < count2; k++)
             {
                 assertT(buffToInteger(*it) == 2);
-                it += 25; //02 00 00 00 01 00 00 00 FF FF FF FF 00 00 00 00 00 00 40 40 00 FF FF FF FF 
+                it += 25; //02 00 00 00 01 00 00 00 FF FF FF FF 00 00 00 00 00 00 40 40 00 FF FF FF FF
                 unsigned count3 = buffToInteger(*it);
                 it += 4;
                 for (int k = 0; k < count3; k++)
                 {
                     assertT(buffToInteger(*it) == 2);
-                    it += 29; //02 00 00 00 BC A7 BB 45 FF FF FF FF FF FF FF FF FF FF FF FF 00 00 80 3F 00 00 80 3F 00 
+                    it += 29; //02 00 00 00 BC A7 BB 45 FF FF FF FF FF FF FF FF FF FF FF FF 00 00 80 3F 00 00 80 3F 00
                 }
             }
 
@@ -3225,7 +3225,7 @@ void CivVIParser::ParsePlayers(std::vector<byte>& data, OUT CivVIState* pState)
             count2 = readInteger(it);
             for (int k = 0; k < count2; k++)
             {
-                it += 11;//03 00 00 00 01 01 01 D1 03 39 76 
+                it += 11;//03 00 00 00 01 01 01 D1 03 39 76
                 unsigned int count3 = readInteger(it);
                 for (int l = 0; l < count3; l++)
                 {
@@ -3262,7 +3262,7 @@ void CivVIParser::ParsePlayers(std::vector<byte>& data, OUT CivVIState* pState)
             {
                 it += 16;
             }
-            it += 8; //06 00 07 00 04 00 05 00 
+            it += 8; //06 00 07 00 04 00 05 00
             for (int k = 0; k < 3; k++)
             {
                 it += 16;
@@ -3287,7 +3287,7 @@ void CivVIParser::ParsePlayers(std::vector<byte>& data, OUT CivVIState* pState)
         {
             it+=4;
         }
-        
+
         readMap(it); //15
         readMap(it); //35
 
@@ -3320,7 +3320,7 @@ void CivVIParser::ParsePlayers(std::vector<byte>& data, OUT CivVIState* pState)
             it += 2;
         }
 
-        readMap(it); //8C 
+        readMap(it); //8C
         readMap(it, 1); //4D
 
         count = buffToInteger(*it); // 4D
@@ -3388,7 +3388,7 @@ void CivVIParser::ParsePlayers(std::vector<byte>& data, OUT CivVIState* pState)
         it += 4;
         it += 4; //iplayer
 
-        count = buffToInteger(*it); 
+        count = buffToInteger(*it);
         //info on cities?
         it += 4;
         for (int i = 0; i < count; i++)
@@ -3424,7 +3424,7 @@ void CivVIParser::ParsePlayers(std::vector<byte>& data, OUT CivVIState* pState)
         {
             it += 12;
         }
-        readMap(it); //8C 
+        readMap(it); //8C
 
         count = readInteger(it); // 40
         for (int i = 0; i < count; i++)
@@ -3491,7 +3491,7 @@ void CivVIParser::ParsePlayers(std::vector<byte>& data, OUT CivVIState* pState)
 
         readMap(it); //23
 
-        count = readInteger(it); 
+        count = readInteger(it);
         for (int i = 0; i < count; i++)
         {
             it += 13; //02 02 64
@@ -3544,7 +3544,7 @@ void CivVIParser::ParsePlayers(std::vector<byte>& data, OUT CivVIState* pState)
         for (int j = 0; j < count; j++)
         {
             assertT(buffToInteger(*it) == 0x03);
-            it += 64; //03 00 00 00 02 00 02 00 02 00 03 00 0B 00 00 00 00 F1 D8 FF 00 F1 D8 FF 00 F1 D8 FF 00 F1 D8 FF 00 F1 D8 FF 00 F1 D8 FF 00 F1 D8 FF 00 F1 D8 FF 00 F1 D8 FF 00 F1 D8 FF 00 F1 D8 FF 00 00 00 00 
+            it += 64; //03 00 00 00 02 00 02 00 02 00 03 00 0B 00 00 00 00 F1 D8 FF 00 F1 D8 FF 00 F1 D8 FF 00 F1 D8 FF 00 F1 D8 FF 00 F1 D8 FF 00 F1 D8 FF 00 F1 D8 FF 00 F1 D8 FF 00 F1 D8 FF 00 F1 D8 FF 00 00 00 00
         }
         it += 61;
     }
@@ -3596,12 +3596,12 @@ void CivVIParser::ParsePlayers(std::vector<byte>& data, OUT CivVIState* pState)
     {
         it += 4;
     }
-    count = readInteger(it); 
+    count = readInteger(it);
     for (int i = 0; i < count; i++)
     {
-        it += 16; // 0F 00 00 00 3F 00 00 00 F0 66 5D E9 00 00 00 00 
+        it += 16; // 0F 00 00 00 3F 00 00 00 F0 66 5D E9 00 00 00 00
         it += 65;
-        count2 = readInteger(it); 
+        count2 = readInteger(it);
         for (int j = 0; j < count2; j++)
         {
             readString(it); //CLASS_MELEE
@@ -3641,14 +3641,14 @@ void CivVIParser::ParsePlayers(std::vector<byte>& data, OUT CivVIState* pState)
         count2 = readInteger(it); //40
         for (int j = 0; j < count2; j++)
         {
-            it += 24; //0F 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
+            it += 24; //0F 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
             int count3 = readInteger(it);
             for (int k = 0; k < count3; k++)
             {
                 it += 4; //C0 A6 72 6B
             }
             it += 20; //FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF
-            
+
         }
 
         count2 = readInteger(it);
@@ -3685,11 +3685,11 @@ void CivVIParser::ParsePlayers(std::vector<byte>& data, OUT CivVIState* pState)
     count2 = readInteger(it);
     for (int i = 0; i < count2; i++)
     {
-        it += 16; //01 00 00 00 00 00 00 00 05 00 00 00 00 00 01 00 
+        it += 16; //01 00 00 00 00 00 00 00 05 00 00 00 00 00 01 00
         count = readInteger(it);
         for (int j = 0; j < count; j++)
         {
-            it += 28; //01 00 00 00 00 00 00 00 07 00 00 00 00 00 01 00 03 00 00 00 11 00 00 00 04 00 00 00 
+            it += 28; //01 00 00 00 00 00 00 00 07 00 00 00 00 00 01 00 03 00 00 00 11 00 00 00 04 00 00 00
             it += 20;//FF FF FF FF FF FF FF FF FF FF 01 00 FF FF FF FF FF FF FF FF
             it += 20;//00 00 00 00 FF FF 02 00 FF FF FF FF FF FF 02 00 FF FF FF FF
             assertT(buffToInteger(*it) == 0x06);
@@ -3702,7 +3702,7 @@ void CivVIParser::ParsePlayers(std::vector<byte>& data, OUT CivVIState* pState)
             {
                 it += 4;
             }
-            it += 37; //00 00 00 00 00 01 00 00 00 00 00 00 00 05 00 00 00 00 00 01 00 01 00 00 00 00 00 00 00 03 00 00 00 02 00 03 00 
+            it += 37; //00 00 00 00 00 01 00 00 00 00 00 00 00 05 00 00 00 00 00 01 00 01 00 00 00 00 00 00 00 03 00 00 00 02 00 03 00
         }
 
     }
@@ -3731,7 +3731,7 @@ void CivVIParser::ParsePlayers(std::vector<byte>& data, OUT CivVIState* pState)
     {
         gp[i].type = readInteger(it);
         assertT(buffToInteger(*it) == 0x05);
-        it += 4; // 5 
+        it += 4; // 5
         gp[i].name = readInteger(it);
         it += 4; // type
         gp[i].era = readInteger(it);
@@ -3761,8 +3761,8 @@ void CivVIParser::ParsePlayers(std::vector<byte>& data, OUT CivVIState* pState)
     for (int i = 0; i < count; i++)
     {
         it += 16; //02 00 00 00 01 00 00 00 0F 00 00 00 00 00 00 00
-        int quest = readInteger(it); //38 7D E9 89 
-        it += 12; //05 00 00 00 0A 00 00 00 FF FF FF FF 
+        int quest = readInteger(it); //38 7D E9 89
+        it += 12; //05 00 00 00 0A 00 00 00 FF FF FF FF
         if (quest != 0x89e97d38 && quest != 0x0c41aa65)
             questParameterCount++;
     }
@@ -3772,14 +3772,14 @@ void CivVIParser::ParsePlayers(std::vector<byte>& data, OUT CivVIState* pState)
     {
         it += 16; //02 00 00 00 02 00 00 00 09 00 00 00 00 00 00 00
         int quest = readInteger(it); //80 B8 AC AE
-        it += 12; //0C 00 00 00 0C 00 00 00 10 00 00 00 
+        it += 12; //0C 00 00 00 0C 00 00 00 10 00 00 00
         if (quest != 0x89e97d38 && quest != 0x0c41aa65)
             questParameterCount++;
     }
 
     for (int i = 0; i < questParameterCount; i++)
     {
-        it += 8; //01 00 00 00 D3 EA 57 2E 
+        it += 8; //01 00 00 00 D3 EA 57 2E
     }
 
     it += 4; //03
@@ -3877,7 +3877,7 @@ void CivVIParser::ParsePlayers(std::vector<byte>& data, OUT CivVIState* pState)
     it += 4; //00
 
     //RANDOM EVENT
-    count = readInteger(it); 
+    count = readInteger(it);
     for (int i = 0; i < count; i++)
     {
         assertT(buffToInteger(*it) == 0x1C);
@@ -3929,7 +3929,7 @@ void CivVIParser::ParsePlayers(std::vector<byte>& data, OUT CivVIState* pState)
 
         readString(it); //LOC_CITY_NAME_ONDINI
 
-        it += 8; //01 00 00 00 E2 0A 00 00 
+        it += 8; //01 00 00 00 E2 0A 00 00
     }
 
     it += 36; //08 00 00 00 00 10 00 00 00 08 00 00 00 10 00 00 00 35 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
@@ -3974,7 +3974,7 @@ void CivVIParser::ParsePlayers(std::vector<byte>& data, OUT CivVIState* pState)
     readMap(it); //8b
     it += 24; //00
 
-    it += 8; //34 00 00 00 02 00 00 00 
+    it += 8; //34 00 00 00 02 00 00 00
 
     //MOMENT
     count = readInteger(it);

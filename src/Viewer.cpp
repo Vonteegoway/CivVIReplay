@@ -14,7 +14,6 @@
 #include "Crc32b.h"
 #include <tlhelp32.h>
 
-
 #define HEX_WIDTH 186.f
 #define HEX_HEIGHT 215.f
 
@@ -30,16 +29,6 @@ Viewer::Viewer(HINSTANCE hInstance, unsigned int Width, unsigned int Height) : d
     bDrawMinimap = true;
     bDrawResume = true;
     minimapSize = 3;
-
-    /*ImGuiSettingsHandler ini_handler;
-    ini_handler.TypeName = "UserData";
-    ini_handler.TypeHash = ImHashStr("UserData");
-    ini_handler.ReadOpenFn = MyUserData_ReadOpen;
-    ini_handler.ReadLineFn = MyUserData_ReadLine;
-    ini_handler.WriteAllFn = MyUserData_WriteAll;
-    g.SettingsHandlers.push_back(ini_handler);*/
-
-    //file_dialog.current_path = "C:/Users/Kevin/Documents";
     bDrawEconomicStats = false;
     bDrawMilitaryStats = false;
     bDrawTech = false;
@@ -76,23 +65,6 @@ Viewer::Viewer(HINSTANCE hInstance, unsigned int Width, unsigned int Height) : d
     Start(hInstance, Width, Height);
 
 }
-
-/*void Viewer::Draw(VK::CONTEXT_API& Vulkan, bool bPicking) {
-    if (!hsicon)
-    {
-        hsicon = ::LoadImage(
-            ::GetModuleHandle(0),
-            MAKEINTRESOURCE(IDI_ICON2),
-            IMAGE_ICON,
-            ::GetSystemMetrics(SM_CXSMICON),
-            ::GetSystemMetrics(SM_CYSMICON),
-            0);
-        if (hsicon)
-            ::SendMessage(Vulkan.pContext->hWindow, WM_SETICON, ICON_SMALL, (LPARAM)hsicon);
-    }
-
-}
-*/
 
 void getFilesList(std::string filePath, std::string extension, std::queue<std::string>& returnFileName)
 {
@@ -1589,9 +1561,7 @@ void Viewer::DrawMap() {
                 ImGui::SetCursorPos(ImVec2(posX + 200.f * zoom, posY + 9.0f * zoom));
                 DrawImage(c.governor->type, posX, posY, zoom * 0.25f, ImVec4(0.f, 0.f, 1.f, 1.f));
                 ImGui::SetCursorPos(ImVec2(posX + 220.f * zoom, posY + 10.0f * zoom));
-                int turnToGo = 5;
-                if (c.governor->type == 0x610b2746 || c.governor->type == 0x68d94b26) //defender
-                    turnToGo = 3;
+                int turnToGo = loader.assets.governorTurnToGo[c.governor->type];
                 if (turnToGo - c.governor->turn)
                     ImGui::Text("%d", turnToGo - c.governor->turn);
 
@@ -3833,6 +3803,7 @@ void Viewer::Start(HINSTANCE hInstance, unsigned int Width, unsigned int Height)
     GLFWwindow* window = glfwCreateWindow(Width, Height, "CivReplay", nullptr, nullptr);
     glfwMakeContextCurrent(window);
     glfwSwapInterval(1);
+    Assets::setIcon(window);
 
 
     // setup Dear ImGui context
@@ -3849,7 +3820,7 @@ void Viewer::Start(HINSTANCE hInstance, unsigned int Width, unsigned int Height)
     io.Fonts->AddFontFromFileTTF("./Font/ProggyTiny.ttf", 14.0f);
     io.Fonts->AddFontFromFileTTF("./Font/ProggyTiny.ttf", 16.0f);
 
-    io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;     // Enable keyboard controls
+    //io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;     // Enable keyboard controls
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;      // Enable Gamepad Controls
     //io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;         // Enable Docking
     //io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;       // Enable Multi-Viewport / Platform Windows

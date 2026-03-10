@@ -18,7 +18,7 @@ enum LAYERTYPE
 
 struct StaticModifier
 {
-	StaticModifier():reqTech(0),reqCivic(0){}
+	StaticModifier():reqTech(0),reqCivic(0), yield(0), count(0){}
 	LAYERTYPE layerType;
 	unsigned int type;
 	unsigned int yield;
@@ -64,10 +64,12 @@ struct Assets
 	std::map<unsigned int, unsigned int > unitUpgrade;
 	std::map<unsigned int, std::vector<unsigned int> > unitReplace;
 	std::vector<StaticModifier> staticYieldModifiers;
+	std::map<unsigned int, unsigned int > governorTurnToGo;
 	void InitTileYieldModifier();
+	void InitGovernorTurnToGo();
 
 
-
+	static void setIcon(GLFWwindow* window);
 	static void prettifyName(char* name);
 	void InitAsset(const char* _prename, const char* _name, TABLE::INSTANCE* dbValue = NULL);
 	static unsigned int GetCRC(const char* _folder, const char* _name);

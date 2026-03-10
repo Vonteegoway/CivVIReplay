@@ -79,7 +79,7 @@ void CivVIState::UpdatePointer(const CivVIGame& Game)
                 if (!strncmp(cityName, "LOC_CIVILIZATION_", 17))
                     begin += 17;
                 size_t len = strlen(begin);
-                strcpy(c.pretty_name, begin); 
+                strcpy(c.pretty_name, begin);
                 c.pretty_name[len - 5] = 0;
             }
             else

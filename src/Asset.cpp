@@ -74,6 +74,19 @@ void Assets::prettifyName(char* name)
 	}
 }
 
+void Assets::setIcon(GLFWwindow* window)
+{
+	// Set icon
+	GLFWimage image;
+	image.pixels = stbi_load("image/icon/icon1.png", &image.width, &image.height, 0, 4);
+
+	if (image.pixels)
+	{
+		glfwSetWindowIcon(window, 1, &image);
+		stbi_image_free(image.pixels);
+	}
+}
+
 void Asset::prettifyName()
 {
 	Assets::prettifyName(name);
@@ -202,6 +215,7 @@ void ExtractLayerModifier(const char* table, int tableNameLen, LAYERTYPE layerTy
 
 			if (!strcmp(Descriptor.Name, typeName))
 				modifier.type = ~Crc32(Value.szValue);
+
 			if (!strcmp(Descriptor.Name, "YieldType"))
 				modifier.yield = ~Crc32(Value.szValue);
 			if (!strcmp(Descriptor.Name, "YieldChange"))
@@ -222,6 +236,35 @@ void ExtractLayerModifier(const char* table, int tableNameLen, LAYERTYPE layerTy
 				modifier.reqCivic = ~Crc32(Value.szValue);
 			}
 
+		}
+	}
+}
+
+void Assets::InitGovernorTurnToGo()
+{
+	TABLE* pTableGovernors = GetTable("Governors", 9);
+	if (!pTableGovernors)
+		return;
+	for (int iInstance = 0; iInstance < pTableGovernors->Instances.Count; iInstance++)
+	{
+		TABLE::INSTANCE& Instance = *pTableGovernors->Instances[iInstance];
+		unsigned int governorType = 0;
+		unsigned int turnToGo = 0;
+		for (int iValue = 0; iValue < Instance.Values.Count; iValue++)
+		{
+			const TABLE::DESCRIPTOR& Descriptor = *Instance.pTable->Descriptors[iValue];
+			TABLE::INSTANCE::VALUE& Value = Instance.Values[iValue];
+			if (!Value.szValue)
+				continue;
+
+			if (!strcmp(Descriptor.Name, "GovernorType"))
+				governorType = ~Crc32(Value.szValue);
+			if (!strcmp(Descriptor.Name, "TransitionStrength"))
+				turnToGo = (225-Value.iValue)/25; // 150 = 3 turns, 100 = 5 turns
+		}
+		if (governorType && turnToGo)
+		{
+			governorTurnToGo[governorType] = turnToGo;
 		}
 	}
 }
@@ -319,6 +362,8 @@ void Assets::InitAll(const wchar_t* RootFolder, const wchar_t* WorkshopFolder)
 	}
 
 	InitTileYieldModifier();
+	InitGovernorTurnToGo();
+
 
 	//LogA("End Loading database \n");
 	Assets::InitIcons();
