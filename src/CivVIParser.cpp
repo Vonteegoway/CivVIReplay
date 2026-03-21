@@ -744,11 +744,11 @@ void CivVIParser::ParseMap(std::vector<byte>& data, OUT int& width, OUT std::vec
     width = buffToInteger(*it);
 }
 
-std::string readString(std::vector<byte>::iterator& it)
+std::string readString(std::vector<byte>::iterator& it, int sizeCount = 4)
 {
 
-    unsigned int count = buffToInteger(*it);
-    it += 4;
+    unsigned int count = buffToInteger(*it, sizeCount);
+    it += sizeCount;
     std::string str((char*)&(*it), count);
     it += count;
     return str;
@@ -2291,7 +2291,13 @@ void CivVIParser::ParsePlayers(std::vector<byte>& data, OUT CivVIState* pState)
             it++;
             for (int i = 0; i < count; i++)
             {
-                it += 26; //01 00 00 00 07 CA 81 A2 00 00 02 00 00 00 00 00 00 00 00 00 00 00 FF FF FF FF
+                int count2 = readInteger(it);
+                for (int k = 0; k < count2; k++)
+                {
+                    it += 4; //07 CA 81 A2 / 22 6A 05 7C
+                    std::string str = readString(it, 2); //0A 00 SUK_JAHAZI
+                    it += 16; //02 00 00 00 00 00 00 00 00 00 00 00 FF FF FF FF
+                }
             }
         }
         it += 4;
