@@ -1,13 +1,11 @@
 ﻿# CivVIReplay
 
-CivVIReplay is a modern C++ application designed to parse and visualize **Civilization VI multiplayer replay data**.  
+CivVIReplay is a modern C++ application designed to parse and visualize **Civilization VI multiplayer replay data**.
 It reconstructs game state information from replay files and presents it through a real-time graphical interface powered by OpenGL and ImGui.
 
 This tool is specifically designed for the competitive multiplayer scene and relies on commonly used multiplayer balance and gameplay mods such as **BBG (Better Balanced Game)**, **BBS (Better Balanced Starts)**, and **MPH (Multiplayer Helper)**. Replays generated without these mods may not be fully supported.
 
 CivVIReplay is built with the multiplayer community in mind, aiming to provide better analytical tools for competitive matches, tournaments, and post-game review.
-
-CivVIReplay parses **binary save files** to reconstruct the game state, whereas the internal static library **civmodutilities** handles **civilization data** stored within the `data/` folder. This separation ensures modularity: `civmodutilities` manages the game rules, schemas, and assets, while CivVIReplay interprets dynamic multiplayer replays.
 
 If you are interested in Civilization VI multiplayer, you can explore community hubs such as:
 
@@ -26,7 +24,6 @@ The project was developed as both a practical tool for the multiplayer ecosystem
 - Structured game state reconstruction
 - OpenGL-based rendering
 - ImGui-driven graphical interface
-- Modular internal parsing library (`civmodutilities`)
 - Automatic runtime asset deployment
 
 ---
@@ -56,48 +53,6 @@ The following libraries are included in the repository:
 - **jsoncpp** – JSON parsing and serialization library
 
 Each dependency remains under its respective license. Please refer to their official repositories for licensing details.
-
----
-
-## 🏗 Project Structure
-
-```
-CivVIReplay/
-│
-├── src/ # Main application source files
-├── include/ # Public headers
-│
-├── civmodutilities/ # Internal static library
-│ ├── src/
-│ └── include/
-│
-├── external/ # Third-party dependencies
-│ ├── imgui/
-│ └── zlib/
-│
-├── assets/ # Runtime resources (fonts, images, shaders)
-├── lib/ # Precompiled libraries (e.g., glfw3_mt.lib)
-└── CMakeLists.txt
-```
-
----
-
-### Architectural Overview
-
-- **civmodutilities**  
-  A reusable static library that parses **civilization data** from the `data/` folder.  
-  It provides schema handling, game rules interpretation, and utility functions that the main executable depends on.
-
-- **CivVIReplay executable**  
-  Parses **binary save/replay files** to reconstruct the game state at any point in a multiplayer match.  
-  Integrates GLFW, OpenGL, and ImGui for rendering and UI display.
-
-- **Compression Layer**  
-  zlib is used to handle compressed replay data when required.
-
-This separation allows the replay parser to focus on dynamic game events while relying on `civmodutilities` for static game content, ensuring modularity, maintainability, and easier future refactoring.
-
----
 
 ## 🚧 Current Limitations
 
@@ -135,14 +90,14 @@ If you would like to contribute:
 
 ## 📦 License
 
-This project is licensed under the MIT License.  
+This project is licensed under the MIT License.
 See the `LICENSE` file for details.
 
 ---
 
 ## 🙏 Acknowledgments
 
-Special thanks to **Vodairo**, who created and designed the entire `civmodutilities` library.  
+Special thanks to **Vodairo**, who created and designed the entire `civmodutilities` library.
 The parsing architecture, schema handling, and core replay reconstruction logic are built upon this foundational work.
 
 This project would not exist in its current form without that contribution.
