@@ -1,10 +1,9 @@
 #pragma once
 //#include "stb_image.h"
-#include "Crc32b.h"
 #include "imgui.h"
 #include <map>
 #include <vector>
-#include "CivVILoader.h"
+#include "CivVIDatabase.h"
 #include <GLFW/glfw3.h>
 
 enum LAYERTYPE
@@ -42,12 +41,9 @@ struct Asset
 	char imageName[256];
 	char folderName[256];
 
-	TABLE::INSTANCE* dbValue;
-
 	Asset()
 	{
 		loaded = false;
-		dbValue = NULL;
 	}
 	bool LoadAsset(const char* filePath);
 
@@ -57,6 +53,8 @@ struct Asset
 
 struct Assets
 {
+	CivVIDatabase database;
+
 	std::vector<unsigned int> imageAssets;
 	std::map<unsigned int, Asset> assets;
 
@@ -64,15 +62,16 @@ struct Assets
 	std::map<unsigned int, unsigned int > unitUpgrade;
 	std::map<unsigned int, std::vector<unsigned int> > unitReplace;
 	std::vector<StaticModifier> staticYieldModifiers;
+	std::vector<unsigned int> naturalWonders;
 	std::map<unsigned int, unsigned int > governorTurnToGo;
 	void InitTileYieldModifier();
-	void InitGovernorTurnToGo();
 
 
 	static void setIcon(GLFWwindow* window);
 	static void prettifyName(char* name);
-	void InitAsset(const char* _prename, const char* _name, TABLE::INSTANCE* dbValue = NULL);
-	static unsigned int GetCRC(const char* _folder, const char* _name);
+	static unsigned int GetCrc(const char* _folder, const char* _name);
+
+	void InitAsset(const char* _prename, const char* _name);
 
 	void InitAll(const wchar_t* RootFolder, const wchar_t* WorkshopFolder);
 	void InitIcons();

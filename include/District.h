@@ -54,7 +54,7 @@ struct District
         }
 	}
 
-    static const Tile* getDirectNeighbours(int i, int x, int y, const std::vector<Tile>& tiles, int width)//without me 
+    static const Tile* getDirectNeighbours(int i, int x, int y, const std::vector<Tile>& tiles, int width)//without me
     {
         std::vector<int> offsets = y % 2 == 0 ? std::vector<int>{-1, -1, -1, 0, 0, -1, 0, +1, +1, -1, +1, 0} : std::vector<int>{ -1, 0, -1, +1, 0, -1, 0, +1, +1, 0, +1, +1 };
 
@@ -72,30 +72,7 @@ struct District
 
     static bool isNaturalWonder(unsigned int type, const Assets& assets)
     {
-        if (type == 0xFFFFFFFF)
-            return false;
-
-        if (assets.assets.find(type) == assets.assets.end())
-            return false;
-
-        for (unsigned int iValue = 0; iValue < assets[type].dbValue->Childs->Count; ++iValue) {
-            TABLE::INSTANCE& Instance = *assets[type].dbValue->Childs[iValue];
-            if (!strcmp(Instance.pTable->Name, "Features"))
-            {
-                for (unsigned int iValue = 0; iValue < Instance.Values->Count; ++iValue) {
-
-                    const TABLE::DESCRIPTOR& Descriptor = *Instance.pTable->Descriptors[iValue];
-                    TABLE::INSTANCE::VALUE& Value = Instance.Values[iValue];
-                    if (!strcmp(Descriptor.Name, "NaturalWonder"))
-                    {
-                        return Value.bValue;
-                    }
-                }
-                break;
-            }
-        }
-
-        return false;
+        return std::find(assets.naturalWonders.begin(), assets.naturalWonders.end(), type) != assets.naturalWonders.end();
     }
 
     static int specificDistrict(int type, PlayerInfo& pInfo)
@@ -191,7 +168,7 @@ struct District
             d.yieldType = 0xeb3f55e8;
         else
             d.yieldType = 0;
-        
+
         if(d.yieldType != 0)
         {
             for (int iNeighbor = 0; iNeighbor < 6; iNeighbor++)

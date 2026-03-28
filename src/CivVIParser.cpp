@@ -6,7 +6,7 @@
 #include <zlib.h>
 #include <chrono>
 #include "CivVIState.h"
-#include <Crc32b.h>
+#include <Crc.h>
 
 #ifdef _DEBUG
 #define assertT(c) assert(c);
@@ -980,7 +980,7 @@ void CivVIParser::ParseVisibility(std::vector<byte>& data, OUT std::vector<Playe
 
 }
 
-void CivVIParser::ParseDisaster(std::vector<byte>& data, int width, IN_OUT std::vector<Tile>& tiles)
+void CivVIParser::ParseDisaster(std::vector<byte>& data, int width, std::vector<Tile>& tiles)
 {
     it = std::search(data.begin(), data.end(), FEATURE_BEGIN, FEATURE_BEGIN + 7);
     assertT(it != data.end());

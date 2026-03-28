@@ -29,20 +29,21 @@ set(IMGUI_SOURCES
     ${PROJECT_SOURCE_DIR}/external/imgui/backends/imgui_impl_glfw.cpp
 )
 
+# sqlite sources
+set(SQLITE_SOURCES
+    ${PROJECT_SOURCE_DIR}/external/sqlite/sqlite3.c
+    ${PROJECT_SOURCE_DIR}/external/sqlite/shell.c
+)
+
 # -----------------------------
 # External libraries
 # -----------------------------
 add_subdirectory(external/zlib)
 
 # -----------------------------
-# Internal library
-# -----------------------------
-add_subdirectory(civmodutilities)
-
-# -----------------------------
 # Executable
 # -----------------------------
-add_executable(${PROJECT_NAME} ${SOURCES} ${IMGUI_SOURCES} assets/resources/CivVIReplay.rc)
+add_executable(${PROJECT_NAME} ${SOURCES} ${IMGUI_SOURCES} ${SQLITE_SOURCES} assets/resources/CivVIReplay.rc "src/Database.cpp" "src/CivVIDatabase.cpp" "include/Database.h" "include/CivVIDatabase.h")
 
 # Force proper C++ linkage and subsystem
 set_target_properties(${PROJECT_NAME} PROPERTIES
@@ -59,13 +60,13 @@ target_include_directories(${PROJECT_NAME} PRIVATE
     ${PROJECT_SOURCE_DIR}/external
     ${PROJECT_SOURCE_DIR}/external/imgui
     ${PROJECT_SOURCE_DIR}/external/imgui/backends
+    ${PROJECT_SOURCE_DIR}/external/sqlite
 )
 
 # -----------------------------
 # Libraries
 # -----------------------------
 target_link_libraries(${PROJECT_NAME} PRIVATE
-    civmodutilities
     zlib
     ${PROJECT_SOURCE_DIR}/lib/glfw3_mt.lib
     opengl32

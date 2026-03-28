@@ -1,9 +1,10 @@
 #include "Asset.h"
-#include "CivVILoader.h"
 #include "Imgui/imgui.h"
 
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
+#include <ctype.h>
+#include <crc.h>
 
 GLuint init_texture(const char* imagepath, float* newWidth, float* newHeight)
 {
@@ -107,7 +108,7 @@ bool exists(const char* name) {
 	}
 }
 
-unsigned int Assets::GetCRC(const char* _folder, const char* _name)
+unsigned int Assets::GetCrc(const char* _folder, const char* _name)
 {
 	char fullName[512];
 	char* out = fullName;
@@ -132,15 +133,14 @@ unsigned int Assets::GetCRC(const char* _folder, const char* _name)
 	return ~Crc32(fullName);
 }
 
-void Assets::InitAsset(const char* _folder, const char* _name, TABLE::INSTANCE* dbValue)
+void Assets::InitAsset(const char* _folder, const char* _name)
 {
-	unsigned int crc = Assets::GetCRC(_folder, _name);
+	unsigned int crc = Assets::GetCrc(_folder, _name);
 	assets[crc] = Asset();
 	strcpy(assets[crc].name, _name);
 	assets[crc].prettifyName();
 	strcpy(assets[crc].imageName, _name);
 	strcpy(assets[crc].folderName, _folder);
-	assets[crc].dbValue = dbValue;
 
 
     char selected_path[] = "./image";
@@ -195,174 +195,189 @@ void Assets::InitIcons()
 	Assets::builderIcon = ~Crc32("ICON_BUILDERICON");
 }
 
-void ExtractLayerModifier(const char* table, int tableNameLen, LAYERTYPE layerType, const char* typeName, std::vector<StaticModifier>& staticYieldModifiers)
+struct YieldModifierData {
+	YieldModifierData(LAYERTYPE layerType, const char* typeName, std::vector<StaticModifier>& staticYieldModifiers) :layerType(layerType), typeName(typeName), staticYieldModifiers(staticYieldModifiers){}
+	LAYERTYPE layerType;
+	const char* typeName;
+	std::vector<StaticModifier>& staticYieldModifiers;
+};
+
+int storeYieldModifier(void* data, int argc, char** argv, char** colNames)
 {
-	TABLE* pTableYieldChanges = GetTable(table, tableNameLen);
-	if (!pTableYieldChanges)
-		return;
-	for (int iInstance = 0; iInstance < pTableYieldChanges->Instances.Count; iInstance++)
-	{
-		TABLE::INSTANCE& Instance = *pTableYieldChanges->Instances[iInstance];
-		staticYieldModifiers.emplace_back();
-		StaticModifier& modifier = staticYieldModifiers.back();
-		modifier.layerType = layerType;
-		for (int iValue = 0; iValue < Instance.Values.Count; iValue++)
+	YieldModifierData& yieldModifier = *((YieldModifierData*)data);
+	yieldModifier.staticYieldModifiers.emplace_back();
+	StaticModifier& modifier = yieldModifier.staticYieldModifiers.back();
+	modifier.layerType = yieldModifier.layerType;
+	for (int i = 0; i < argc; i++) {
+		if (argv[i] == NULL)
+			continue;
+
+		if (!strcmp(colNames[i], yieldModifier.typeName))
+			modifier.type = ~Crc32(argv[i]);
+		if (!strcmp(colNames[i], "YieldType"))
+			modifier.yield = ~Crc32(argv[i]);
+		if (!strcmp(colNames[i], "YieldChange"))
 		{
-			const TABLE::DESCRIPTOR& Descriptor = *Instance.pTable->Descriptors[iValue];
-			TABLE::INSTANCE::VALUE& Value = Instance.Values[iValue];
-			if (!Value.szValue)
-				continue;
-
-			if (!strcmp(Descriptor.Name, typeName))
-				modifier.type = ~Crc32(Value.szValue);
-
-			if (!strcmp(Descriptor.Name, "YieldType"))
-				modifier.yield = ~Crc32(Value.szValue);
-			if (!strcmp(Descriptor.Name, "YieldChange"))
-			{
-				modifier.count = Value.iValue;
-			}
-			//bonus
-			if (!strcmp(Descriptor.Name, "BonusYieldChange"))
-			{
-				modifier.count = Value.iValue;
-			}
-			if (!strcmp(Descriptor.Name, "PrereqTech") && Value.szValue)
-			{
-				modifier.reqTech = ~Crc32(Value.szValue);
-			}
-			if (!strcmp(Descriptor.Name, "PrereqCivic") && Value.szValue)
-			{
-				modifier.reqCivic = ~Crc32(Value.szValue);
-			}
-
+			modifier.count = atoi(argv[i]);
+		}
+		//bonus
+		if (!strcmp(colNames[i], "BonusYieldChange"))
+		{
+			modifier.count = atoi(argv[i]);
+		}
+		if (!strcmp(colNames[i], "PrereqTech") && argv[i])
+		{
+			modifier.reqTech = ~Crc32(argv[i]);
+		}
+		if (!strcmp(colNames[i], "PrereqCivic") && argv[i])
+		{
+			modifier.reqCivic = ~Crc32(argv[i]);
 		}
 	}
+	return 0;
 }
 
-void Assets::InitGovernorTurnToGo()
+int storeNaturalWonders(void* data, int argc, char** argv, char** colNames)
 {
-	TABLE* pTableGovernors = GetTable("Governors", 9);
-	if (!pTableGovernors)
-		return;
-	for (int iInstance = 0; iInstance < pTableGovernors->Instances.Count; iInstance++)
-	{
-		TABLE::INSTANCE& Instance = *pTableGovernors->Instances[iInstance];
-		unsigned int governorType = 0;
-		unsigned int turnToGo = 0;
-		for (int iValue = 0; iValue < Instance.Values.Count; iValue++)
-		{
-			const TABLE::DESCRIPTOR& Descriptor = *Instance.pTable->Descriptors[iValue];
-			TABLE::INSTANCE::VALUE& Value = Instance.Values[iValue];
-			if (!Value.szValue)
-				continue;
+	Assets& assets = *((Assets*)data);
 
-			if (!strcmp(Descriptor.Name, "GovernorType"))
-				governorType = ~Crc32(Value.szValue);
-			if (!strcmp(Descriptor.Name, "TransitionStrength"))
-				turnToGo = (225-Value.iValue)/25; // 150 = 3 turns, 100 = 5 turns
+	unsigned int type = 0;
+	bool naturalWonder = false;
+	for (int i = 0; i < argc; i++) {
+		if (argv[i] == NULL)
+			continue;
+		if (!strcmp(colNames[i], "NaturalWonder")) {
+			if (!strcmp(argv[i], "1")) {
+				naturalWonder = true;
+			}
+			else {
+				return 0;
+			}
 		}
-		if (governorType && turnToGo)
-		{
-			governorTurnToGo[governorType] = turnToGo;
+		if (!strcmp(colNames[i], "FeatureType")) {
+			type = ~Crc32(argv[i]);
 		}
 	}
+	if(type)
+		assets.naturalWonders.push_back(type);
+	return 0;
+
+}
+
+int storeGovernors(void* data, int argc, char** argv, char** colNames)
+{
+	Assets& assets = *((Assets*)data);
+
+	unsigned int governorType = 0;
+	unsigned int turnToGo = 0;
+	for (int i = 0; i < argc; i++) {
+		if (argv[i] == NULL)
+			continue;
+
+		if (!strcmp(colNames[i], "GovernorType"))
+			governorType = ~Crc32(argv[i]);
+		if (!strcmp(colNames[i], "TransitionStrength"))
+			turnToGo = (225 - atoi(argv[i])) / 25; // 150 = 3 turns, 100 = 5 turns
+	}
+	if (governorType && turnToGo)
+	{
+		assets.governorTurnToGo[governorType] = turnToGo;
+	}
+	return 0;
 }
 
 void Assets::InitTileYieldModifier()
 {
 	staticYieldModifiers.reserve(256);
-	ExtractLayerModifier("TERRAIN_YIELDCHANGES", 20, TERRAIN, "TerrainType", staticYieldModifiers);
-	ExtractLayerModifier("FEATURE_YIELDCHANGES", 20, FEATURE, "FeatureType", staticYieldModifiers);
-	ExtractLayerModifier("Resource_YieldChanges", 21, RESOURCE, "ResourceType", staticYieldModifiers);
-	ExtractLayerModifier("IMPROVEMENT_YIELDCHANGES", 24, IMPROVEMENT, "ImprovementType", staticYieldModifiers);
 
-	ExtractLayerModifier("IMPROVEMENT_BONUSYIELDCHANGES", 29, BONUS_IMPROVEMENT, "ImprovementType", staticYieldModifiers);
+	YieldModifierData yieldModifier1 = YieldModifierData(TERRAIN, "TerrainType", staticYieldModifiers);
+	database.GetTable("TERRAIN_YIELDCHANGES", storeYieldModifier, &yieldModifier1);
+	YieldModifierData yieldModifier2 = YieldModifierData(FEATURE, "FeatureType", staticYieldModifiers);
+	database.GetTable("FEATURE_YIELDCHANGES", storeYieldModifier, &yieldModifier2);
+	YieldModifierData yieldModifier3 = YieldModifierData(RESOURCE, "ResourceType", staticYieldModifiers);
+	database.GetTable("Resource_YieldChanges", storeYieldModifier, &yieldModifier3);
+	YieldModifierData yieldModifier4 = YieldModifierData(IMPROVEMENT, "ImprovementType", staticYieldModifiers);
+	database.GetTable("IMPROVEMENT_YIELDCHANGES", storeYieldModifier, &yieldModifier4);
+	YieldModifierData yieldModifier5 = YieldModifierData(BONUS_IMPROVEMENT, "ImprovementType", staticYieldModifiers);
+	database.GetTable("IMPROVEMENT_BONUSYIELDCHANGES", storeYieldModifier, &yieldModifier5);
 }
 
+int storeAssets(void* data, int argc, char** argv, char** colNames)
+{
+	Assets& assets = *((Assets*)data);
+	for (int i = 0; i < argc; i++) {
+		if (!strcmp(colNames[i], "Type")) {
+
+			const char* ptr = argv[i];
+			int size = 0;
+			while (*ptr != '_') {
+				size++;
+				ptr++;
+			}
+			char folder[256] = "";
+			char name[256] = "";
+			strncpy(folder, argv[i], size);
+			strncpy(name, ++ptr, strlen(argv[i]) - size);
+
+			assets.InitAsset(folder, name);
+			if (!strcmp(folder, "DISTRICT"))
+			{
+				sprintf(folder, "%s//GREY", folder);
+				assets.InitAsset(folder, name);
+			}
+			return 0;
+		}
+	}
+	return 0;
+}
+
+int storeUnitsUpgrade(void* data, int argc, char** argv, char** colNames)
+{
+	Assets& assets = *((Assets*)data);
+	unsigned int unit = 0;
+	unsigned int upgrade = 0;
+	for (int i = 0; i < argc; i++) {
+		if (!strcmp(colNames[i], "Unit")) {
+			unit = ~Crc32(argv[i]);
+		}
+		if (!strcmp(colNames[i], "UpgradeUnit"))
+		{
+			upgrade = ~Crc32(argv[i]);
+		}
+	}
+	assets.unitUpgrade[unit] = upgrade;
+	return 0;
+}
+
+int storeUnitsReplaces(void* data, int argc, char** argv, char** colNames)
+{
+	Assets& assets = *((Assets*)data);
+	unsigned int replace = 0;
+	unsigned int unit = 0;
+	for (int i = 0; i < argc; i++) {
+		if (!strcmp(colNames[i], "CivUniqueUnitType")) {
+			replace = ~Crc32(argv[i]);
+		}
+		if (!strcmp(colNames[i], "ReplacesUnitType"))
+		{
+			unit = ~Crc32(argv[i]);
+		}
+	}
+	assets.unitReplace[unit].push_back(replace);
+	return 0;
+}
 
 void Assets::InitAll(const wchar_t* RootFolder, const wchar_t* WorkshopFolder)
 {
+	database.LoadDatabase();
 
-	//LogA("Loading database %ls %ls \n", RootFolder, WorkshopFolder);
-	MOD_UTILITIES::Load(RootFolder, WorkshopFolder);
-	//LogA("End Loading database \n");
-
-	TABLE* pTableKinds = GetTable("Kinds", 5);
-
-	for (int iInstance = 0; iInstance < pTableKinds->Instances.Count; iInstance++)
-	{
-		for (int iChild = 0; iChild < pTableKinds->Instances[iInstance]->Childs.Count; iChild++)
-		{
-			TABLE::INSTANCE& Instance = *pTableKinds->Instances[iInstance]->Childs[iChild];
-			for (int iValue = 0; iValue < Instance.Values.Count; iValue++)
-			{
-				TABLE::INSTANCE::VALUE& Value = Instance.Values[iValue];
-				const TABLE::DESCRIPTOR& Descriptor = *Instance.pTable->Descriptors[iValue];
-				if (Descriptor.Flags.bPrimaryKey && Descriptor.Type == TABLE::DESCRIPTOR::TEXT) {
-					const char* ptr = Value.szValue;
-					int size = 0;
-					while (*ptr != '_') {
-						size++;
-						ptr++;
-					}
-					char folder[256] = "";
-					char name[256] = "";
-					strncpy(folder, Value.szValue, size);
-					strncpy(name, ++ptr, strlen(Value.szValue) - size);
-
-					Assets::InitAsset(folder, name, &Instance);
-					if (!strcmp(folder, "DISTRICT"))
-					{
-						sprintf(folder, "%s//GREY", folder);
-						Assets::InitAsset(folder, name);
-					}
-				}
-			}
-		}
-	}
-	//LogA("End Init assets \n");
-
-	TABLE* pTableUpgrades = GetTable("UnitUpgrades", 12);
-	for (int iInstance = 0; iInstance < pTableUpgrades->Instances.Count; iInstance++)
-	{
-		TABLE::INSTANCE& Instance = *pTableUpgrades->Instances[iInstance];
-		unsigned int unit = 0;
-		unsigned int upgrade = 0;
-		for (int iValue = 0; iValue < Instance.Values.Count; iValue++)
-		{
-			const TABLE::DESCRIPTOR& Descriptor = *Instance.pTable->Descriptors[iValue];
-			TABLE::INSTANCE::VALUE& Value = Instance.Values[iValue];
-
-			if (!strcmp(Descriptor.Name, "Unit"))
-				unit = ~Crc32(Value.szValue);
-			if (!strcmp(Descriptor.Name, "UpgradeUnit"))
-				upgrade = ~Crc32(Value.szValue);
-		}
-		unitUpgrade[unit] = upgrade;
-	}
-
-	TABLE* pTableReplaces = GetTable("UnitReplaces", 12);
-	for (int iInstance = 0; iInstance < pTableReplaces->Instances.Count; iInstance++)
-	{
-		TABLE::INSTANCE& Instance = *pTableReplaces->Instances[iInstance];
-		unsigned int unit = 0;
-		unsigned int replace = 0;
-		for (int iValue = 0; iValue < Instance.Values.Count; iValue++)
-		{
-			const TABLE::DESCRIPTOR& Descriptor = *Instance.pTable->Descriptors[iValue];
-			TABLE::INSTANCE::VALUE& Value = Instance.Values[iValue];
-
-			if (!strcmp(Descriptor.Name, "CivUniqueUnitType"))
-				replace = ~Crc32(Value.szValue);
-			if (!strcmp(Descriptor.Name, "ReplacesUnitType"))
-				unit = ~Crc32(Value.szValue);
-		}
-		unitReplace[unit].push_back(replace);
-	}
+	database.GetTable("Types", storeAssets, this);
+	database.GetTable("UnitUpgrades", storeAssets, this);
+	database.GetTable("UnitReplaces", storeAssets, this);
 
 	InitTileYieldModifier();
-	InitGovernorTurnToGo();
+	database.GetTable("Governors", storeGovernors, this);
+	database.GetTable("Features", storeNaturalWonders, this);
 
 
 	//LogA("End Loading database \n");
