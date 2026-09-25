@@ -21,36 +21,43 @@ file(GLOB_RECURSE SOURCES CONFIGURE_DEPENDS ${PROJECT_SOURCE_DIR}/src/*.cpp)
 
 # ImGui sources
 set(IMGUI_SOURCES
-    ${PROJECT_SOURCE_DIR}/external/imgui/imgui.cpp
-    ${PROJECT_SOURCE_DIR}/external/imgui/imgui_draw.cpp
-    ${PROJECT_SOURCE_DIR}/external/imgui/imgui_widgets.cpp
-    ${PROJECT_SOURCE_DIR}/external/imgui/imgui_tables.cpp
-    ${PROJECT_SOURCE_DIR}/external/imgui/backends/imgui_impl_opengl3.cpp
-    ${PROJECT_SOURCE_DIR}/external/imgui/backends/imgui_impl_glfw.cpp
+    ${PROJECT_SOURCE_DIR}/external/ImGui/imgui.cpp
+    ${PROJECT_SOURCE_DIR}/external/ImGui/imgui_draw.cpp
+    ${PROJECT_SOURCE_DIR}/external/ImGui/imgui_widgets.cpp
+    ${PROJECT_SOURCE_DIR}/external/ImGui/imgui_tables.cpp
+    ${PROJECT_SOURCE_DIR}/external/ImGui/backends/imgui_impl_opengl3.cpp
+    ${PROJECT_SOURCE_DIR}/external/ImGui/backends/imgui_impl_glfw.cpp
 )
 
-# sqlite sources
-set(SQLITE_SOURCES
-    ${PROJECT_SOURCE_DIR}/external/sqlite/sqlite3.c
-    ${PROJECT_SOURCE_DIR}/external/sqlite/shell.c
-)
+# sqlite sources (shell.c defines main(), only harmless on Windows where the entry point is WinMain)
+set(SQLITE_SOURCES ${PROJECT_SOURCE_DIR}/external/sqlite/sqlite3.c)
+if(WIN32)
+    list(APPEND SQLITE_SOURCES ${PROJECT_SOURCE_DIR}/external/sqlite/shell.c)
+endif()
 
 # -----------------------------
 # External libraries
 # -----------------------------
-add_subdirectory(external/zlib)
+add_subdirectory(external/ZLib)
 
 # -----------------------------
 # Executable
 # -----------------------------
-add_executable(${PROJECT_NAME} ${SOURCES} ${IMGUI_SOURCES} ${SQLITE_SOURCES} assets/resources/CivVIReplay.rc "src/Database.cpp" "src/CivVIDatabase.cpp" "include/Database.h" "include/CivVIDatabase.h")
+set(PLATFORM_SOURCES)
+if(WIN32)
+    set(PLATFORM_SOURCES assets/resources/CivVIReplay.rc)
+endif()
 
-# Force proper C++ linkage and subsystem
-set_target_properties(${PROJECT_NAME} PROPERTIES
-    LINKER_LANGUAGE CXX
-    WIN32_EXECUTABLE OFF
-    LINK_FLAGS "/SUBSYSTEM:WINDOWS"
-)
+add_executable(${PROJECT_NAME} ${SOURCES} ${IMGUI_SOURCES} ${SQLITE_SOURCES} ${PLATFORM_SOURCES})
+
+if(WIN32)
+    # Force proper C++ linkage and subsystem
+    set_target_properties(${PROJECT_NAME} PROPERTIES
+        LINKER_LANGUAGE CXX
+        WIN32_EXECUTABLE OFF
+        LINK_FLAGS "/SUBSYSTEM:WINDOWS"
+    )
+endif()
 
 # -----------------------------
 # Include directories
@@ -58,26 +65,37 @@ set_target_properties(${PROJECT_NAME} PROPERTIES
 target_include_directories(${PROJECT_NAME} PRIVATE
     ${PROJECT_SOURCE_DIR}/include
     ${PROJECT_SOURCE_DIR}/external
-    ${PROJECT_SOURCE_DIR}/external/imgui
-    ${PROJECT_SOURCE_DIR}/external/imgui/backends
+    ${PROJECT_SOURCE_DIR}/external/ImGui
+    ${PROJECT_SOURCE_DIR}/external/ImGui/backends
     ${PROJECT_SOURCE_DIR}/external/sqlite
 )
+
+# Windows-only shims (dirent.h, bundled GLFW headers) must not shadow system headers elsewhere
+if(WIN32)
+    target_include_directories(${PROJECT_NAME} PRIVATE ${PROJECT_SOURCE_DIR}/include/win)
+endif()
 
 # -----------------------------
 # Libraries
 # -----------------------------
-target_link_libraries(${PROJECT_NAME} PRIVATE
-    zlib
-    ${PROJECT_SOURCE_DIR}/lib/glfw3_mt.lib
-    opengl32
-)
-
-# -----------------------------
-# Compile definitions
-# -----------------------------
-target_compile_definitions(${PROJECT_NAME} PRIVATE
-    _SILENCE_EXPERIMENTAL_FILESYSTEM_DEPRECATION_WARNING
-)
+if(WIN32)
+    target_link_libraries(${PROJECT_NAME} PRIVATE
+        zlib
+        ${PROJECT_SOURCE_DIR}/lib/glfw3_mt.lib
+        opengl32
+    )
+else()
+    find_package(glfw3 3.3 REQUIRED)
+    find_package(OpenGL REQUIRED)
+    find_package(Threads REQUIRED)
+    target_link_libraries(${PROJECT_NAME} PRIVATE
+        zlib
+        glfw
+        OpenGL::GL
+        Threads::Threads
+        ${CMAKE_DL_LIBS}
+    )
+endif()
 
 # -----------------------------
 # Copy runtime assets
@@ -91,3 +109,21 @@ foreach(FOLDER ${ASSET_FOLDERS})
         COMMENT "Copying ${FOLDER} to output directory"
     )
 endforeach()
+
+# -----------------------------
+# Install (Linux: ~/.local by default with -DCMAKE_INSTALL_PREFIX=$HOME/.local)
+# -----------------------------
+if(UNIX AND NOT APPLE)
+    set(CIVREPLAY_DATADIR share/civvireplay)
+    install(TARGETS ${PROJECT_NAME} RUNTIME DESTINATION ${CIVREPLAY_DATADIR})
+    install(DIRECTORY assets/font assets/image DESTINATION ${CIVREPLAY_DATADIR})
+    install(CODE "
+        file(MAKE_DIRECTORY \"\$ENV{DESTDIR}\${CMAKE_INSTALL_PREFIX}/bin\")
+        execute_process(COMMAND \${CMAKE_COMMAND} -E create_symlink
+            \"\${CMAKE_INSTALL_PREFIX}/${CIVREPLAY_DATADIR}/${PROJECT_NAME}\"
+            \"\$ENV{DESTDIR}\${CMAKE_INSTALL_PREFIX}/bin/civvireplay\")
+    ")
+    configure_file(packaging/civvireplay.desktop.in ${CMAKE_BINARY_DIR}/civvireplay.desktop @ONLY)
+    install(FILES ${CMAKE_BINARY_DIR}/civvireplay.desktop DESTINATION share/applications)
+    install(FILES assets/image/icon/icon1.png DESTINATION share/icons/hicolor/128x128/apps RENAME civvireplay.png)
+endif()

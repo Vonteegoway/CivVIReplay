@@ -12,7 +12,13 @@
 #include "zip_file.h"
 #include "stdio.h"
 #include "Crc.h"
+#include <algorithm>
+#include "Platform.h"
+#ifdef _WIN32
+#define NOMINMAX
+#include <Windows.h>
 #include <tlhelp32.h>
+#endif
 
 #define HEX_WIDTH 186.f
 #define HEX_HEIGHT 215.f
@@ -20,7 +26,7 @@
 imgui_addons::ImGuiFileBrowser Viewer::file_dialog = imgui_addons::ImGuiFileBrowser();
 imgui_addons::ImGuiFileBrowser Viewer::file_dialog_civ = imgui_addons::ImGuiFileBrowser();
 
-Viewer::Viewer(HINSTANCE hInstance, unsigned int Width, unsigned int Height) : dSimulator(*this) {
+Viewer::Viewer(unsigned int Width, unsigned int Height) : dSimulator(*this) {
     scroll = ImVec2(0, 0);
     zoom = 0.5f;
     loaded = false;
@@ -49,30 +55,40 @@ Viewer::Viewer(HINSTANCE hInstance, unsigned int Width, unsigned int Height) : d
     bDrawMapStats = false;
     bDrawGoldUsage = false;
     bDrawGameProgression = false;
-    const char* user = getenv("USERPROFILE");
-    char path[1024];
-    sprintf(path, "%s%s", user, "/Documents/My Games/Sid Meier's Civilization VI/Saves/Multi/");
-    file_dialog.initCurrentPath(path);
+    std::error_code ec;
+    std::filesystem::path savesPath = Platform::civUserDir() / "Saves";
+    if (std::filesystem::is_directory(savesPath / "Multi", ec))
+        savesPath /= "Multi";
+    else if (!std::filesystem::is_directory(savesPath, ec))
+        savesPath = Platform::civUserDir();
+    file_dialog.initCurrentPath((savesPath / "").string());
     hsicon = NULL;
     searchFocus = false;
     bShowYieldOnTile = false;
 
-    Start(hInstance, Width, Height);
+    Start(Width, Height);
 
 }
 
 void getFilesList(std::string filePath, std::string extension, std::queue<std::string>& returnFileName)
 {
-    WIN32_FIND_DATA fileInfo;
-    HANDLE hFind;
-    std::string  fullPath = filePath + "*" + extension;
-    hFind = FindFirstFile(fullPath.c_str(), &fileInfo);
-    if (hFind != INVALID_HANDLE_VALUE) {
-        returnFileName.push(filePath + fileInfo.cFileName);
-        while (FindNextFile(hFind, &fileInfo) != 0) {
-            returnFileName.push(filePath + fileInfo.cFileName);
-        }
+    auto lower = [](std::string s) {
+        std::transform(s.begin(), s.end(), s.begin(), [](unsigned char c) { return (char)std::tolower(c); });
+        return s;
+    };
+    const std::string ext = lower(extension);
+
+    // Saves are loaded (and stats computed) in order, so sort like Windows' FindFirstFile does on NTFS
+    std::vector<std::string> files;
+    std::error_code ec;
+    for (std::filesystem::directory_iterator it(filePath, ec), end; !ec && it != end; it.increment(ec))
+    {
+        if (it->is_regular_file(ec) && lower(it->path().extension().string()) == ext)
+            files.push_back(it->path().string());
     }
+    std::sort(files.begin(), files.end());
+    for (const std::string& file : files)
+        returnFileName.push(file);
 }
 
 
@@ -569,11 +585,8 @@ bool Viewer::LoadAssets()
 {
     if (!loader.endLoadCivDb)
         return false;
-    char selected_path[] = "./image";
     //--
     int count = 0;
-
-    char path[512];
 
     //LogA("Load assets ...\n");
 
@@ -583,8 +596,8 @@ bool Viewer::LoadAssets()
         Asset& a = loader.assets.assets[*p];
         if (!a.bImage)
             continue;
-        sprintf(path, "%s\\%s\\%s.png", selected_path, a.folderName, a.imageName);
-        if (a.LoadAsset(path))
+        std::string path = Platform::findImage(a.folderName, a.imageName);
+        if (a.LoadAsset(path.c_str()))
             count++;
 
         if (count >= 256)
@@ -599,6 +612,9 @@ bool Viewer::LoadAssets()
 
 bool civIsRunning()
 {
+#ifndef _WIN32
+    return false;
+#else
     PROCESSENTRY32 pe32 = { 0 };
     HANDLE hSnap = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
     pe32.dwSize = sizeof(PROCESSENTRY32);
@@ -616,6 +632,7 @@ bool civIsRunning()
     }
 
     return false;
+#endif
 }
 
 void Viewer::DrawGUI(){
@@ -1019,7 +1036,7 @@ void Viewer::DrawMap() {
         ImVec2 mousePos = ImGui::GetMousePos();
         ImVec2 windowPos = ImGui::GetWindowPos();
         zoom += ImGui::GetIO().MouseWheel * 0.1;
-        zoom = min(max(0.1f, zoom), 2.f);
+        zoom = std::min(std::max(0.1f, zoom), 2.f);
         ImVec2 relativePos = ImVec2(mousePos.x + windowPos.x, mousePos.y + windowPos.y);
         scroll.x = (relativePos.x + scroll.x) * (zoom / previous) - relativePos.x;
         scroll.y = (relativePos.y + scroll.y) * (zoom / previous) - relativePos.y;
@@ -1127,7 +1144,7 @@ void Viewer::DrawMap() {
                     }
                     ImDrawList* draw_list = ImGui::GetWindowDrawList();
                     draw_list->Flags &= ~ImDrawListFlags_AntiAliasedLines;
-                    int roadMax = max(t.road, State.tiles[neighbor].road);
+                    int roadMax = std::max(t.road, State.tiles[neighbor].road);
                     draw_list->AddLine(neighborPos, myPos, roadColors[roadMax], 4.f);
                 }
             }
@@ -1263,7 +1280,7 @@ void Viewer::DrawMap() {
                 DrawImage(d.yieldType, posX, posY, zoom*1.5f, ImVec4(0.f, 1.f, 0.f, 1.f), tint);
 
                 ImVec4 Color;
-                switch (d.yieldType)
+                switch ((unsigned int)d.yieldType)
                 {
                     case 0x7f0f8e76: //Faith
                     {
@@ -3020,7 +3037,7 @@ static void glfw_error_callback(int error, const char* description)
     fprintf(stderr, "GLFW Error %d: %s\n", error, description);
 }
 
-void Viewer::Start(HINSTANCE hInstance, unsigned int Width, unsigned int Height) {
+void Viewer::Start(unsigned int Width, unsigned int Height) {
 
     glfwSetErrorCallback(glfw_error_callback);
     if (!glfwInit())
@@ -3039,12 +3056,17 @@ void Viewer::Start(HINSTANCE hInstance, unsigned int Width, unsigned int Height)
     ImGuiIO& io = ImGui::GetIO();
     (void)io;
 
+    // imgui.ini stores the civ/BBG paths, keep it in a writable per-user location
+    static const std::string iniPath = (Platform::configDir() / "imgui.ini").string();
+    io.IniFilename = iniPath.c_str();
+
+    const std::string fontPath = Platform::assetPath("font/ProggyTiny.ttf").string();
     io.Fonts->AddFontDefault();
-    io.Fonts->AddFontFromFileTTF("./Font/ProggyTiny.ttf", 6.0f);
-    io.Fonts->AddFontFromFileTTF("./Font/ProggyTiny.ttf", 8.0f);
-    io.Fonts->AddFontFromFileTTF("./Font/ProggyTiny.ttf", 10.0f);
-    io.Fonts->AddFontFromFileTTF("./Font/ProggyTiny.ttf", 14.0f);
-    io.Fonts->AddFontFromFileTTF("./Font/ProggyTiny.ttf", 16.0f);
+    io.Fonts->AddFontFromFileTTF(fontPath.c_str(), 6.0f);
+    io.Fonts->AddFontFromFileTTF(fontPath.c_str(), 8.0f);
+    io.Fonts->AddFontFromFileTTF(fontPath.c_str(), 10.0f);
+    io.Fonts->AddFontFromFileTTF(fontPath.c_str(), 14.0f);
+    io.Fonts->AddFontFromFileTTF(fontPath.c_str(), 16.0f);
 
     //io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;     // Enable keyboard controls
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;      // Enable Gamepad Controls
@@ -3071,7 +3093,7 @@ void Viewer::Start(HINSTANCE hInstance, unsigned int Width, unsigned int Height)
         if (glfwGetWindowAttrib(window, GLFW_ICONIFIED) != 0)
         {
             //ImGui_ImplGlfw_Sleep(10);
-            Sleep(10);
+            Platform::sleepMs(10);
             continue;
         }
 

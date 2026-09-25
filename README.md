@@ -38,7 +38,7 @@ To build the project, you need:
 - Windows x64
 - OpenGL-compatible GPU
 
-The project currently targets **Windows only**.
+The project targets Windows and Linux (see [Linux](#-linux)).
 
 ### Third-Party Dependencies
 
@@ -54,9 +54,37 @@ The following libraries are included in the repository:
 
 Each dependency remains under its respective license. Please refer to their official repositories for licensing details.
 
+## 🐧 Linux
+
+The app also builds natively on Linux (tested on Ubuntu 24.04 / Pop!_OS with Civ VI running through Proton).
+
+```bash
+sudo apt install build-essential cmake libglfw3-dev libgl-dev
+cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
+cmake --build build -j
+./build/CivVIReplay
+```
+
+Install for the current user (binary and assets in `~/.local/share/civvireplay`, launcher `~/.local/bin/civvireplay`, and a desktop menu entry):
+
+```bash
+cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=$HOME/.local
+cmake --build build -j && cmake --install build
+```
+
+Paths are detected automatically:
+
+- **Civ VI install**: from Steam's `libraryfolders.vdf` (`~/.steam/steam`, `~/.local/share/Steam` or Flatpak Steam)
+- **Saves / mods**: the Proton prefix (`steamapps/compatdata/289070/pfx/.../Documents/My Games/Sid Meier's Civilization VI`), otherwise the native port's `~/.local/share/aspyr-media/Sid Meier's Civilization VI`
+- **Game database**: the Proton prefix's `AppData/Local/Firaxis Games/.../Cache/DebugGameplay.sqlite`, falling back to the bundled `image/database/backup.sqlite`
+- **Settings** (`imgui.ini`) and `crash.log`: `~/.config/civvireplay/`
+
+To launch it from Steam (e.g. in Big Picture), use *Games → Add a Non-Steam Game* and pick `~/.local/share/civvireplay/CivVIReplay`.
+
+`CivVIReplay --dump <save>...` parses saves without opening a window and prints a summary (turn, map, players), which is handy for checking the parser.
+
 ## 🚧 Current Limitations
 
-- Windows-only build configuration
 - Tested on specific Civilization VI versions
 - No automated test suite yet
 - Limited replay compatibility validation

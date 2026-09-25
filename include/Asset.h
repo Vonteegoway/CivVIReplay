@@ -3,6 +3,7 @@
 #include "imgui.h"
 #include <map>
 #include <vector>
+#include <filesystem>
 #include "CivVIDatabase.h"
 #include <GLFW/glfw3.h>
 
@@ -73,7 +74,7 @@ struct Assets
 
 	void InitAsset(const char* _prename, const char* _name);
 
-	void InitAll(const wchar_t* RootFolder, const wchar_t* WorkshopFolder);
+	void InitAll(const std::filesystem::path& RootFolder, const std::filesystem::path& WorkshopFolder);
 	void InitIcons();
 	const Asset& operator[](unsigned int id) const { return assets.at(id); }
 

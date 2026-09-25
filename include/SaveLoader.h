@@ -1,11 +1,12 @@
 #pragma once
 #include <mutex>
+#include <cstdint>
 #include <queue>
 #include "CivVIState.h"
 #include "CivicTech.h"
 #include "Asset.h"
-#include <experimental/filesystem>
-namespace fs = std::experimental::filesystem;
+#include <filesystem>
+namespace fs = std::filesystem;
 #include "cereal/types/vector.hpp"
 #include "cereal/types/map.hpp"
 
@@ -23,7 +24,7 @@ struct SaveLoader {
 
 		for (int iState = 0; iState < States.size(); iState++)
 		{
-			CivVIGame& Game = Games[(int)States[iState].pGame];
+			CivVIGame& Game = Games[(int)(intptr_t)States[iState].pGame];
 			CivVIState& State = States[iState];
 
 			State.pGame = &Game;
@@ -51,8 +52,8 @@ struct SaveLoader {
 	bool steamInstall = false;
 	bool isValidBBGPath();
 	bool isValidCivPath();
-	std::wstring RootFolder;
-	std::wstring WorkshopFolder;
+	fs::path RootFolder;
+	fs::path WorkshopFolder;
 
 	std::mutex mtx;
 	std::queue<std::string> paths;

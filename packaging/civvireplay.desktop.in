@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=Civ VI Replay
+Comment=Replay and analyse your Civilization VI games
+Exec=@CMAKE_INSTALL_PREFIX@/bin/civvireplay
+Icon=civvireplay
+Terminal=false
+Categories=Game;

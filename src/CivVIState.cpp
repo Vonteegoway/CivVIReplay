@@ -1,6 +1,7 @@
 #include "CivVIState.h"
 #include "CivVIGame.h"
 #include <algorithm>
+#include <cmath>
 #include <fstream>
 #include <iostream>
 

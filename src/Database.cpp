@@ -36,8 +36,17 @@ Database& Database::operator=(Database&& other) noexcept {
 
 
 // --- Execute SQL file ---
-void Database::openFile(const std::wstring& path) {
-    int rc = sqlite3_open16(path.c_str(), &db_);
+bool Database::openFile(const std::filesystem::path& path) {
+    sqlite3* db = nullptr;
+    int rc = sqlite3_open_v2(path.u8string().c_str(), &db, SQLITE_OPEN_READONLY, nullptr);
+    if (rc != SQLITE_OK) {
+        sqlite3_close(db);
+        return false;
+    }
+    if (db_)
+        sqlite3_close(db_);
+    db_ = db;
+    return true;
 }
 
 // --- Query with callback ---
@@ -54,12 +63,12 @@ void Database::query(const std::string& sql, RowCallback callback, void* data) {
 }
 
 // --- File reader ---
-std::string Database::readFile(const std::wstring& path) {
+std::string Database::readFile(const std::filesystem::path& path) {
 
     std::ifstream file(path);
     if (!file) {
         char buffer[256];
-		sprintf(buffer, "Cannot open file: %ls", path.c_str());
+		snprintf(buffer, sizeof(buffer), "Cannot open file: %s", path.u8string().c_str());
         throw std::runtime_error(buffer);
     }
 

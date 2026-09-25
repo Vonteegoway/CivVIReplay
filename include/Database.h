@@ -4,6 +4,7 @@
 #include <string>
 #include <functional>
 #include <stdexcept>
+#include <filesystem>
 
 struct Database {
 public:
@@ -21,7 +22,8 @@ public:
     Database& operator=(Database&& other) noexcept;
 
     // Core API
-    void Database::openFile(const std::wstring& path);
+    // Opens an existing database file read-only; returns false on failure
+    bool openFile(const std::filesystem::path& path);
 
     void query(const std::string& sql, RowCallback callback, void* data);
 
@@ -30,6 +32,6 @@ public:
 private:
     sqlite3* db_ = nullptr;
 
-    static std::string readFile(const std::wstring& path);
+    static std::string readFile(const std::filesystem::path& path);
     void check(int rc);
 };

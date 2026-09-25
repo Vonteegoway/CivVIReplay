@@ -1,5 +1,5 @@
 #pragma once
-#include "Imgui/imgui.h"
+#include "ImGui/imgui.h"
 
 enum TypePlayer
 {

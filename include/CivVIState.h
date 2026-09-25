@@ -47,6 +47,6 @@ public:
 	{
 		int iGame;
 		archive(width, turn, iGame, CEREAL_NVP(tiles), CEREAL_NVP(players), CEREAL_NVP(religions), CEREAL_NVP(greatPeople), CEREAL_NVP(greatPeopleRecruted));
-		pGame = (CivVIGame*)iGame;
+		pGame = (CivVIGame*)(intptr_t)iGame; // game seed, resolved by SaveLoader::load
 	}
 };

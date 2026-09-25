@@ -5,7 +5,6 @@
 #include <iostream>
 #include <fstream>
 #include <chrono>
-#include <Windows.h>
 #include "imgui.h"
 #include "backends/imgui_impl_glfw.h"
 #include "backends/imgui_impl_opengl3.h"
@@ -32,11 +31,11 @@ enum VISIBILITY
 
 struct Viewer
 {
-	Viewer(HINSTANCE hInstance, unsigned int Width, unsigned int Height);
+	Viewer(unsigned int Width, unsigned int Height);
 	~Viewer()
 	{
 	}
-	void Start(HINSTANCE hInstance, unsigned int Width, unsigned int Height);
+	void Start(unsigned int Width, unsigned int Height);
 
 	static imgui_addons::ImGuiFileBrowser file_dialog;
 	static imgui_addons::ImGuiFileBrowser file_dialog_civ;
@@ -134,7 +133,7 @@ struct Viewer
 
 	DistrictSimulator dSimulator;
 
-	HANDLE hsicon;
+	void* hsicon;
 
 	bool searchFocus;
 

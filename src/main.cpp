@@ -1,54 +1,76 @@
+#ifdef _WIN32
+#define NOMINMAX
 #include <Windows.h>
+#endif
 #include "Viewer.h"
 #include <thread>
-#include <Dbghelp.h>
-#include <tchar.h>
+#include <cstring>
+#include <cstdlib>
 #include "Asset.h"
+#include "Platform.h"
 
 SaveLoader loader;
 
-typedef BOOL(WINAPI* MINIDUMPWRITEDUMP)(HANDLE hProcess, DWORD dwPid, HANDLE hFile, MINIDUMP_TYPE DumpType, CONST PMINIDUMP_EXCEPTION_INFORMATION ExceptionParam, CONST PMINIDUMP_USER_STREAM_INFORMATION UserStreamParam, CONST PMINIDUMP_CALLBACK_INFORMATION CallbackParam);
-
-void create_minidump(struct _EXCEPTION_POINTERS* apExceptionInfo)
+// Headless diagnostic: parse saves and print a summary, without opening a window.
+static int dumpSaves(int count, char** files)
 {
-    HMODULE mhLib = ::LoadLibrary(_T("dbghelp.dll"));
-    MINIDUMPWRITEDUMP pDump = (MINIDUMPWRITEDUMP)::GetProcAddress(mhLib, "MiniDumpWriteDump");
+    loader.init();
+    if (!loader.isValidCivPath())
+    {
+        fprintf(stderr, "Civilization VI install not found\n");
+        return 1;
+    }
+    for (int i = 0; i < count; i++)
+        loader.paths.push(files[i]);
+    loader.LoadSave(true);
 
-    HANDLE  hFile = ::CreateFile(_T("core.dmp"), GENERIC_WRITE, FILE_SHARE_WRITE, NULL, CREATE_ALWAYS,
-        FILE_ATTRIBUTE_NORMAL, NULL);
-
-    _MINIDUMP_EXCEPTION_INFORMATION ExInfo;
-    ExInfo.ThreadId = ::GetCurrentThreadId();
-    ExInfo.ExceptionPointers = apExceptionInfo;
-    ExInfo.ClientPointers = FALSE;
-
-    const DWORD Flags = MiniDumpNormal |
-        MiniDumpWithFullMemoryInfo |
-        MiniDumpWithHandleData |
-        MiniDumpWithUnloadedModules |
-        MiniDumpWithThreadInfo;
-
-    pDump(GetCurrentProcess(), GetCurrentProcessId(), hFile, (MINIDUMP_TYPE)Flags, &ExInfo, NULL, NULL);
-    ::CloseHandle(hFile);
+    printf("database: %s\n", loader.assets.database.path.u8string().c_str());
+    printf("image assets: %zu / %zu database types\n", loader.assets.imageAssets.size(), loader.assets.assets.size());
+    for (int iState = 0; iState < loader.loadedStateCount; iState++)
+    {
+        const CivVIState& State = loader.States[iState];
+        const CivVIGame& Game = *State.pGame;
+        printf("\n[%d] turn %d, seed %d, timestamp %llu, width %d, %s %s %s, players %d%s%s\n",
+            iState, State.turn, Game.seed, (unsigned long long)State.timestamp, State.width,
+            Game.gamespeed, Game.mapSize, Game.map, Game.nbPlayer,
+            State.error.empty() ? "" : ", error: ", State.error.c_str());
+        for (size_t team = 0; team < Game.playersByTeams.size(); team++)
+        {
+            for (int iPlayer : Game.playersByTeams[team])
+            {
+                const PlayerInfo& info = Game.playersInfo[iPlayer];
+                const Player& player = State.players[iPlayer];
+                printf("  #%d %-24s %-30s %-24s cities %zu units %zu\n", iPlayer, info.civStr, info.leaderStr,
+                    info.pseudo, player.cities.size(), player.units.size());
+            }
+        }
+    }
+    return loader.loadedStateCount == 0;
 }
 
-LONG WINAPI unhandled_handler(struct _EXCEPTION_POINTERS* apExceptionInfo)
+static int run()
 {
-    create_minidump(apExceptionInfo);
-    return EXCEPTION_CONTINUE_SEARCH;
-}
-
-int __stdcall WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, char* lpCmdLine, int nShowCmd) {
-
-    char Buffer[MAX_PATH];
-    DWORD Length = GetTempPathA(MAX_PATH, Buffer);
-    SetUnhandledExceptionFilter(unhandled_handler);
+    Platform::installCrashHandler();
 
     loader.init();
 
-	std::thread first(&SaveLoader::LoadSave, &loader, false);
-    Viewer v(hInstance, 1280, 720);
+    std::thread first(&SaveLoader::LoadSave, &loader, false);
+    Viewer v(1280, 720);
     loader.stop = true;
-	first.join();
-	return 0;
+    first.join();
+    return 0;
 }
+
+#ifdef _WIN32
+int __stdcall WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, char* lpCmdLine, int nShowCmd) {
+    if (__argc > 2 && !strcmp(__argv[1], "--dump"))
+        return dumpSaves(__argc - 2, __argv + 2);
+    return run();
+}
+#else
+int main(int argc, char** argv) {
+    if (argc > 2 && !strcmp(argv[1], "--dump"))
+        return dumpSaves(argc - 2, argv + 2);
+    return run();
+}
+#endif

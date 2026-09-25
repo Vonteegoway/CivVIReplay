@@ -1,6 +1,7 @@
 #include <CivVIDatabase.h>
 #include <sstream>
 #include <filesystem>
+#include "Platform.h"
 
 CivVIDatabase::CivVIDatabase() : database(":memory:")
 {
@@ -9,14 +10,12 @@ CivVIDatabase::CivVIDatabase() : database(":memory:")
 
 void CivVIDatabase::LoadDatabase()
 {
-	std::filesystem::path appdata = std::getenv("LOCALAPPDATA");
-	std::filesystem::path filePath = appdata / "Firaxis Games" / "Sid Meier's Civilization VI" / "Cache" / "DebugGameplay.sqlite";
-	if (!std::filesystem::exists(filePath))
+	path = Platform::civCacheDbPath();
+	if (path.empty() || !database.openFile(path))
 	{
-		filePath = std::filesystem::path("./image") / "database" / "backup.sqlite";
+		path = Platform::assetPath("image") / "database" / "backup.sqlite";
+		database.openFile(path);
 	}
-
-	database.openFile(filePath);
 }
 
 void CivVIDatabase::GetTable(const std::string tableName, Database::RowCallback callback, void* data)

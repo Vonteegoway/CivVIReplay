@@ -1,176 +1,75 @@
 #include "SaveLoader.h"
 #include <iostream>
 #include <fstream>
-#include <shlobj.h>
-#include "json/json.h"
+#include <thread>
+#include <chrono>
+#include "Platform.h"
 
-std::wstring getSteamPath()
-{
-    const std::wstring SteamKeys = L"SOFTWARE\\Valve\\Steam\\";
-
-    for (int check64Registry = 0; check64Registry < 2; check64Registry++)
-    {
-
-        HKEY hKey = NULL;
-        LONG lResult = RegOpenKeyExW(HKEY_CURRENT_USER, SteamKeys.c_str(), 0, KEY_READ, &hKey);
-
-        bool fSuccess = (lResult == 0);
-
-        if (fSuccess)
-        {
-            DWORD type = 0;
-            DWORD size = MAX_PATH;
-            wchar_t szPathToExe[MAX_PATH] = {};
-            lResult = RegGetValueW(hKey, NULL, L"SteamPath", RRF_RT_ANY, &type, &szPathToExe, &size);
-            fSuccess = (lResult == 0);
-            if (fSuccess)
-            {
-                fSuccess = (wcslen(szPathToExe) > 0) ? TRUE : FALSE;
-            }
-
-            if (hKey != NULL)
-            {
-                RegCloseKey(hKey);
-                hKey = NULL;
-            }
-            if (fSuccess)
-            {
-                return std::wstring(szPathToExe);
-            }
-        }
-    }
-
-    return L"";
-}
-
-std::wstring extractValueFromValveFile(const std::wstring& line, const std::wstring& key)
+static std::string extractValueFromValveFile(const std::string& line, const std::string& key)
 {
     size_t pathKeyPos = line.find(key);
     if (pathKeyPos != std::string::npos)
     {
-        size_t pathBeginPos = line.find(L"\"", pathKeyPos + key.size() + 1);
-        size_t pathEndPos = line.find(L"\"", pathBeginPos + 1);
+        size_t pathBeginPos = line.find("\"", pathKeyPos + key.size() + 1);
+        size_t pathEndPos = line.find("\"", pathBeginPos + 1);
         if (pathBeginPos != std::string::npos && pathEndPos != std::string::npos)
         {
             return line.substr(pathBeginPos + 1, pathEndPos - pathBeginPos - 1);
         }
     }
 
-    return L"";
+    return "";
 }
 
-std::vector<std::wstring> getSteamGamePaths(const std::wstring& libraryfoldersPath)
+static fs::path getInstalledCivSteam()
 {
-    std::vector<std::wstring> steamGamePaths;
+    const std::string civSteamId = "289070";
 
-    std::wstring line;
-    std::wifstream myfile(libraryfoldersPath.c_str(), std::ios::in);
-
-    while (std::getline(myfile, line))
+    for (const fs::path& library : Platform::steamLibraries())
     {
-        std::wstring steamGamePath = extractValueFromValveFile(line, L"\"path\"");
-        if (!steamGamePath.empty())
+        fs::path steamapps = library / "steamapps";
+        std::ifstream manifest(steamapps / ("appmanifest_" + civSteamId + ".acf"));
+        std::string line;
+        while (std::getline(manifest, line))
         {
-            steamGamePaths.push_back(steamGamePath);
-        }
-    }
-    myfile.close();
-
-    return steamGamePaths;
-}
-
-std::wstring getCivPath(const std::wstring& gameManifestPath, const std::wstring& gameFolderPath, const std::wstring& civSteamId)
-{
-    std::wstring line;
-    std::wifstream myfile(gameManifestPath.c_str(), std::ios::in);
-    std::wstring installdir;
-    bool isRightGame = false;
-    while (std::getline(myfile, line))
-    {
-        std::wstring appId = extractValueFromValveFile(line, L"\"appid\"");
-        if (!appId.empty())
-        {
-            if (appId == civSteamId)
-                isRightGame = true;
-            else
-                break;
-        }
-        if (installdir.empty())
-            installdir = extractValueFromValveFile(line, L"\"installdir\"");
-    }
-    myfile.close();
-
-    if (isRightGame)
-        return installdir;
-    else
-        return L"";
-}
-
-std::wstring getInstalledCivSteam()
-{
-    const std::wstring civSteamId = L"289070";
-
-    //LogA("Get Installed Civ Steam");
-    std::wstring steamPath = getSteamPath();
-    //LogA("SteamPath : %s", steamPath.c_str());
-    if (steamPath.empty())
-        return L"";
-    std::wstring libraryfoldersPath = steamPath + L"/steamapps/libraryfolders.vdf";
-
-    std::vector<std::wstring> gameSteamPaths = getSteamGamePaths(libraryfoldersPath);
-    for (int iGameSteamPath = 0; iGameSteamPath < gameSteamPaths.size(); iGameSteamPath++)
-    {
-        const std::wstring& gameSteamPath = gameSteamPaths[iGameSteamPath];
-        std::wstring gamefolderPath = gameSteamPath + L"//steamapps//";
-
-        //LogA("Game Folder Path : %s", gamefolderPath.c_str());
-        for (auto& p : fs::recursive_directory_iterator(gamefolderPath))
-        {
-            if (p.path().extension() == ".acf")
+            std::string installdir = extractValueFromValveFile(line, "\"installdir\"");
+            if (!installdir.empty())
             {
-                std::wstring civPath = getCivPath(p.path(), p.path().parent_path(), civSteamId);
-                //LogA("civPath : %s", civPath.c_str());
-                if (!civPath.empty())
-                    return gamefolderPath + L"common//" +civPath + L"//";
+                fs::path civ = steamapps / "common" / installdir;
+                std::error_code ec;
+                if (fs::is_directory(civ, ec))
+                    return civ / ""; // trailing separator: isValidCivPath inspects parent_path()
             }
         }
     }
-    return L"";
+    return fs::path();
 }
 
-
-std::wstring getInstalledCivEpic()
+static fs::path getInstalledCivEpic()
 {
-    const std::wstring civEpicId = L"Kinglet";
+#ifdef _WIN32
+    const std::string civEpicId = "Kinglet";
 
-    std::wstring ManifestsPath;
-    {
-        const wchar_t* path = L"%PROGRAMDATA%\\Epic\\EpicGamesLauncher\\Data\\Manifests\\";
-        unsigned int Len = ExpandEnvironmentStringsW(path, NULL, 0);
-        if (Len)
-        {
-            ManifestsPath.resize(Len);
-            ExpandEnvironmentStringsW(path, (LPWSTR)ManifestsPath.data(), Len);
-        }
-    }
+    const char* programData = std::getenv("PROGRAMDATA");
+    if (!programData)
+        return fs::path();
+    fs::path ManifestsPath = fs::path(programData) / "Epic" / "EpicGamesLauncher" / "Data" / "Manifests";
 
-    //LogA("Find Epic manifest : %s", ManifestsPath.c_str());
+    std::error_code ec;
+    if (!fs::exists(ManifestsPath, ec))
+        return fs::path();
 
-    if (!fs::exists(ManifestsPath.c_str()))
-        return L"";
-
-    for (const auto& entry : fs::directory_iterator(ManifestsPath.c_str()))
+    for (const auto& entry : fs::directory_iterator(ManifestsPath, ec))
     {
         bool isRightGame = false;
-        std::wstring epicId;
-        std::wstring installLocation;
+        std::string installLocation;
         if (entry.path().extension() == ".item")
         {
-            std::wstring line;
-            std::wifstream myfile(entry.path(), std::ios::in);
+            std::string line;
+            std::ifstream myfile(entry.path(), std::ios::in);
             while (std::getline(myfile, line))
             {
-                std::wstring epicId = extractValueFromValveFile(line, L"\"MainGameAppName\"");
+                std::string epicId = extractValueFromValveFile(line, "\"MainGameAppName\"");
                 if (!epicId.empty())
                 {
                     if (epicId == civEpicId)
@@ -179,17 +78,18 @@ std::wstring getInstalledCivEpic()
                         break;
                 }
                 if (installLocation.empty())
-                    installLocation = extractValueFromValveFile(line, L"\"InstallLocation\"");
+                    installLocation = extractValueFromValveFile(line, "\"InstallLocation\"");
             }
             myfile.close();
             if (isRightGame)
             {
                 //LogA("Find civ path : %s", installLocation.c_str());
-                return installLocation+ L"\\";
+                return fs::path(installLocation) / "";
             }
         }
     }
-    return L"";
+#endif
+    return fs::path();
 }
 
 void SaveLoader::init()
@@ -202,7 +102,7 @@ void SaveLoader::init()
     //LogA("Find Steam or Epic civ install");
 
 
-    std::wstring path = getInstalledCivSteam();
+    fs::path path = getInstalledCivSteam();
     if (!path.empty())
     {
         //LogA("Civ is installed on Steam : %s", civPath.c_str());
@@ -216,9 +116,7 @@ void SaveLoader::init()
         steamInstall = false;
     }
 
-    wchar_t my_documents[MAX_PATH];
-    HRESULT result = SHGetFolderPathW(NULL, CSIDL_PERSONAL, NULL, SHGFP_TYPE_CURRENT, my_documents);
-    bbgPath = std::wstring(my_documents) + L"\\My Games\\Sid Meier's Civilization VI\\Mods\\BetterBalancedGame";
+    bbgPath = Platform::civUserDir() / "Mods" / "BetterBalancedGame";
     //LogA("BBG path (default on Epic) : %s", bbgPath.c_str());
 }
 
@@ -475,36 +373,36 @@ void SaveLoader::LoadSave(bool untilEnd)
     {
         if (p == "Steam")
         {
-            RootFolder = civPath.wstring() + L"SteamApps\\common\\Sid Meier's Civilization VI\\";
-            WorkshopFolder = civPath.wstring() + L"SteamApps\\workshop\\content\\289070\\";
+            RootFolder = civPath / "SteamApps" / "common" / "Sid Meier's Civilization VI" / "";
+            WorkshopFolder = civPath / "SteamApps" / "workshop" / "content" / "289070" / "";
         }
         else if (p == "SteamApps")
         {
-            RootFolder = civPath.wstring() + L"common\\Sid Meier's Civilization VI\\";
-            WorkshopFolder = civPath.wstring() + L"workshop\\content\\289070\\";
+            RootFolder = civPath / "common" / "Sid Meier's Civilization VI" / "";
+            WorkshopFolder = civPath / "workshop" / "content" / "289070" / "";
 
         }
         else if (p == "Sid Meier's Civilization VI")
         {
-            RootFolder = civPath.wstring();
-            WorkshopFolder = civPath.parent_path().parent_path().parent_path().wstring() + L"\\workshop\\content\\289070\\";
+            RootFolder = civPath;
+            WorkshopFolder = civPath.parent_path().parent_path().parent_path() / "workshop" / "content" / "289070" / "";
         }
 
     }
     else //EPIC version can be random
     {
-        RootFolder = civPath.wstring();
+        RootFolder = civPath;
     }
 
     if (!steamInstall)
     {
-        RootFolder = civPath.wstring();
+        RootFolder = civPath;
         WorkshopFolder = bbgPath;
     }
 
     //LogA("Trying to load Asset with : %s / %s", RootFolder.c_str(), WorkshopFolder.c_str());
 
-    assets.InitAll(RootFolder.c_str(), WorkshopFolder.c_str());
+    assets.InitAll(RootFolder, WorkshopFolder);
     endLoadCivDb = true;
 
     LoadSave_WithoutAsset(untilEnd);

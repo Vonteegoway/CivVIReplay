@@ -1,10 +1,11 @@
 #include "Asset.h"
-#include "Imgui/imgui.h"
+#include "ImGui/imgui.h"
 
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
 #include <ctype.h>
-#include <crc.h>
+#include "Crc.h"
+#include "Platform.h"
 
 GLuint init_texture(const char* imagepath, float* newWidth, float* newHeight)
 {
@@ -79,7 +80,7 @@ void Assets::setIcon(GLFWwindow* window)
 {
 	// Set icon
 	GLFWimage image;
-	image.pixels = stbi_load("image/icon/icon1.png", &image.width, &image.height, 0, 4);
+	image.pixels = stbi_load(Platform::assetPath("image/icon/icon1.png").string().c_str(), &image.width, &image.height, 0, 4);
 
 	if (image.pixels)
 	{
@@ -143,11 +144,7 @@ void Assets::InitAsset(const char* _folder, const char* _name)
 	strcpy(assets[crc].folderName, _folder);
 
 
-    char selected_path[] = "./image";
-	char path[512];
-
-	sprintf(path, "%s\\%s\\%s.png", selected_path, assets[crc].folderName, assets[crc].imageName);
-	if (exists(path))
+	if (!Platform::findImage(assets[crc].folderName, assets[crc].imageName).empty())
 	{
 		imageAssets.push_back(crc);
 		assets[crc].bImage = true;
@@ -322,7 +319,7 @@ int storeAssets(void* data, int argc, char** argv, char** colNames)
 			assets.InitAsset(folder, name);
 			if (!strcmp(folder, "DISTRICT"))
 			{
-				sprintf(folder, "%s//GREY", folder);
+				strcat(folder, "//GREY");
 				assets.InitAsset(folder, name);
 			}
 			return 0;
@@ -367,7 +364,7 @@ int storeUnitsReplaces(void* data, int argc, char** argv, char** colNames)
 	return 0;
 }
 
-void Assets::InitAll(const wchar_t* RootFolder, const wchar_t* WorkshopFolder)
+void Assets::InitAll(const std::filesystem::path& RootFolder, const std::filesystem::path& WorkshopFolder)
 {
 	database.LoadDatabase();
 
