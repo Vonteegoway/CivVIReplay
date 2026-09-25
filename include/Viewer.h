@@ -57,6 +57,7 @@ struct Viewer
 
 	void initIniHandler();
 	void showMainMenu();
+	void closeSaves();
 	void DrawPackets();
 	void DrawNavigation();
 	void DrawInfo();

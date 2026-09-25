@@ -122,9 +122,16 @@ void SaveLoader::init()
 
 void SaveLoader::Close()
 {
+    // Drop queued saves, then wait for the loader thread to finish the one it is parsing
     mtx.lock();
     while (paths.size())
         paths.pop();
+    while (busy)
+    {
+        mtx.unlock();
+        std::this_thread::sleep_for(std::chrono::milliseconds(10));
+        mtx.lock();
+    }
     States.clear();
     Games.clear();
     loadedStateCount = 0;
@@ -190,8 +197,14 @@ void SaveLoader::LoadSave_WithoutAsset(bool untilEnd)
 
         std::string path;
         mtx.lock();
+        if (paths.empty()) // emptied by Close() since the check above
+        {
+            mtx.unlock();
+            continue;
+        }
         path = paths.front();
         paths.pop();
+        busy = true;
         mtx.unlock();
 
         //LogA("Begin LoadSave_WithoutAsset %s \n", path.c_str());
@@ -344,6 +357,9 @@ void SaveLoader::LoadSave_WithoutAsset(bool untilEnd)
             sendOnceToDatabase = true;
         }
 
+        mtx.lock();
+        busy = false;
+        mtx.unlock();
     }
     return;
 

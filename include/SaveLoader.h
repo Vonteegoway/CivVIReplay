@@ -44,6 +44,7 @@ struct SaveLoader {
 	int loadedStateCount;
 	bool stop;
 	bool endLoadCivDb;
+	bool busy = false; // a save is being parsed (guarded by mtx)
 
 	const std::string defaultCivPath;
 	const std::string defaultBBGPath;

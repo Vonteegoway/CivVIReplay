@@ -379,6 +379,20 @@ void CreateGif(const char* gifPath, const SaveLoader& loader, int size, int spee
 }
 
 // Now inside any function
+void Viewer::closeSaves()
+{
+    loader.Close();
+    iCurrentState = 0;
+    iSelectedTile = -1;
+    iTempSelectedTile = -1;
+    iVisibilityFromPlayer = -1;
+    bAutomatic = false;
+    dSimulator.enabled = false;
+    dSimulator.districts.clear();
+    dSimulator.iPlayer = 0;
+    dSimulator.iCurrentDistrict = 0;
+}
+
 void Viewer::showMainMenu()
 {
     bool open = false, openDirectory = false;
@@ -392,6 +406,8 @@ void Viewer::showMainMenu()
                 open = true;
             if (ImGui::MenuItem("Open directory", NULL))
                 openDirectory = true;
+            if (ImGui::MenuItem("Close", NULL, false, loader.loadedStateCount > 0 || !loader.paths.empty()))
+                closeSaves();
 
 
             if (ImGui::MenuItem("Save civreplay", NULL))
