@@ -344,7 +344,15 @@ void SaveLoader::LoadSave_WithoutAsset(bool untilEnd)
         if (stop)
             return;
 
-        State.Parse(Parser, Game, assets);
+        try
+        {
+            State.Parse(Parser, Game, assets);
+        }
+        catch (const std::exception& e)
+        {
+            // One unreadable save must not take the whole viewer down
+            State.error = std::string("Error while parsing: ") + e.what();
+        }
 
         if (stop)
             return;

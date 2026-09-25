@@ -40,6 +40,9 @@ struct PlayerInfo
 	PlayerInfo()
 	{
 		pseudo[0] = 0;
+		civStr[0] = 0;
+		leaderStr[0] = 0;
+		locCivName[0] = 0;
 		primaryColor = ImVec4(1.f, 0.f, 0.f, 0.7f);
 		secondaryColor = ImVec4(0.f, 0.f, 0.f, 0.7f);
 		typeCiv = FREE_CITIES;

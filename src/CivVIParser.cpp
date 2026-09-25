@@ -521,8 +521,10 @@ void CivVIParser::ReadInt(OUT CivVIPacket& result)
 }
 void CivVIParser::ReadString(OUT CivVIPacket& result)
 {
-    char* str = new char[result.length];
+    // Always NUL terminated: copyString() strcpy's it and length can be 0
+    char* str = new char[result.length + 1];
     memcpy(str, &(*it), result.length*sizeof(char));
+    str[result.length] = 0;
     result.data.pointer = str;
     it += result.length ? result.length : 4;
 }

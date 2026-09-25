@@ -7,6 +7,11 @@ CivVIGame::CivVIGame()
     nbPlayer = 0;
     begin = 0;
     seed = 0;
+    timestamp = 0;
+    multiPlayer = false;
+    gamespeed[0] = 0;
+    mapSize[0] = 0;
+    map[0] = 0;
 }
 
 void CivVIGame::UpdateMapStats(CivVIState& firstState)

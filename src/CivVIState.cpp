@@ -227,6 +227,13 @@ static unsigned int getRevealStrategicTech(unsigned int resource)
         return 0x95484501;
 }
 
+// Techs/civics missing from a player's list (partially parsed save) count as not found
+static bool isFound(const std::map<unsigned int, bool>& found, unsigned int key)
+{
+    std::map<unsigned int, bool>::const_iterator it = found.find(key);
+    return it != found.end() && it->second;
+}
+
 void CivVIState::ComputeTileYields(Assets& assets)
 {
     const CivVIState& State = *this;
@@ -257,7 +264,7 @@ void CivVIState::ComputeTileYields(Assets& assets)
                     {
                         const Player& p = State.players[tile.iPlayer];
                         unsigned int tech = getRevealStrategicTech(tile.resource);
-                        if(p.techDogmeInfo[0].found.at(tech))
+                        if(isFound(p.techDogmeInfo[0].found, tech))
                             tile.yields[modifier.yield] += modifier.count;
 
                     }
@@ -273,7 +280,7 @@ void CivVIState::ComputeTileYields(Assets& assets)
                     if (tile.iPlayer < State.players.size())
                     {
                         const Player& p = State.players[tile.iPlayer];
-                        if (p.techDogmeInfo[0].found.at(modifier.reqTech))
+                        if (isFound(p.techDogmeInfo[0].found, modifier.reqTech))
                             tile.yields[modifier.yield] += modifier.count;
                     }
                 }
@@ -282,7 +289,7 @@ void CivVIState::ComputeTileYields(Assets& assets)
                     if (tile.iPlayer < State.players.size())
                     {
                         const Player& p = State.players[tile.iPlayer];
-                        if (p.techDogmeInfo[1].found.at(modifier.reqCivic))
+                        if (isFound(p.techDogmeInfo[1].found, modifier.reqCivic))
                             tile.yields[modifier.yield] += modifier.count;
                     }
                 }
