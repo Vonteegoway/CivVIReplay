@@ -224,9 +224,16 @@ namespace Platform
 	{
 		std::vector<CivLocation> locations;
 		const fs::path appSupport = homeDir() / "Library" / "Application Support";
-		// Aspyr's 2023 update nested the data one level deeper (".../Civilization VI/Sid Meier's Civilization VI")
-		locations.push_back(nativeLayout(appSupport / civFolderName / civFolderName));
-		locations.push_back(nativeLayout(appSupport / civFolderName));
+		// Since Aspyr's 2023 update the Steam build keeps saves/mods one level deeper and the
+		// gameplay cache in a Windows-like "Firaxis Games" folder next to them (confirmed on
+		// macOS 26). The pre-2023 layout, with Saves and Cache directly inside, is the fallback;
+		// its leftover Cache is stale on updated installs.
+		const fs::path aspyr = appSupport / civFolderName;
+		locations.push_back({
+			aspyr / civFolderName,
+			aspyr / "Firaxis Games" / civFolderName / "Cache" / "DebugGameplay.sqlite",
+		});
+		locations.push_back(nativeLayout(aspyr));
 
 		const fs::path bottleRoots[] = {
 			appSupport / "CrossOver" / "Bottles",
@@ -322,7 +329,14 @@ namespace Platform
 
 	fs::path civCacheDbPath()
 	{
-		for (const CivLocation& loc : civLocations())
+		const std::vector<CivLocation> locations = civLocations();
+		// Prefer the database of the install whose saves we use, so an updated install never
+		// picks up a stale database left behind by an older layout...
+		for (const CivLocation& loc : locations)
+			if (isDir(loc.userDir) && isFile(loc.cacheDb))
+				return loc.cacheDb;
+		// ...otherwise any database at all (CivVIDatabase rejects unusable ones)
+		for (const CivLocation& loc : locations)
 			if (isFile(loc.cacheDb))
 				return loc.cacheDb;
 		return fs::path();

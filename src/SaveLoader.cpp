@@ -215,7 +215,8 @@ void SaveLoader::LoadSave_WithoutAsset(bool untilEnd)
         CivVIParser Parser;
 
         Parser.ParseAll(path.c_str());
-        std::cout << path << std::endl;
+        if (printPaths)
+            std::cout << path << std::endl;
 #ifdef _DEBUG
         char filename[1000];
         strcpy(filename, path.c_str());

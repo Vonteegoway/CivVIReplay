@@ -57,6 +57,7 @@ struct SaveLoader {
 	// Set when the loader thread cannot continue; shown by the UI. Written once by the loader
 	// thread before hasFatalError is raised, so readers check the flag first.
 	std::string fatalError;
+	bool printPaths = true; // print each save path as it is parsed (the self-test prints its own)
 	std::atomic<bool> hasFatalError{ false };
 	void setFatalError(const std::string& message)
 	{

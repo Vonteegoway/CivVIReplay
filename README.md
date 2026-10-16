@@ -105,7 +105,8 @@ open build/CivVIReplay.app
 Paths are detected automatically:
 
 - **Civ VI install**: from Steam's `libraryfolders.vdf` in `~/Library/Application Support/Steam`
-- **Saves / mods / game database**: the Steam (Aspyr) build's `~/Library/Application Support/Sid Meier's Civilization VI` (or the nested `.../Sid Meier's Civilization VI/Sid Meier's Civilization VI` folder newer versions use), otherwise the Windows build inside a CrossOver or Whisky bottle (`drive_c/users/<user>/Documents/My Games/...`)
+- **Saves / mods**: the Steam (Aspyr) build's `~/Library/Application Support/Sid Meier's Civilization VI/Sid Meier's Civilization VI` (or the parent folder on installs older than 2023), otherwise the Windows build inside a CrossOver or Whisky bottle (`drive_c/users/<user>/Documents/My Games/...`)
+- **Game database**: `~/Library/Application Support/Sid Meier's Civilization VI/Firaxis Games/Sid Meier's Civilization VI/Cache/DebugGameplay.sqlite`, taken from the same install as the saves, falling back to the bundled copy
 - **Settings** (`imgui.ini`) and `crash.log`: `~/Library/Application Support/CivVIReplay/`
 
 ### Checking an installation

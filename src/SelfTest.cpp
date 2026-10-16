@@ -165,6 +165,7 @@ int runSelfTest(int argc, char** argv)
 		info("steam library: " + str(lib));
 
 	loader.waitForCivPaths = false;
+	loader.printPaths = false;
 	loader.init();
 	if (loader.isValidCivPath())
 		ok("Civ VI install: " + str(loader.civPath));
