@@ -299,7 +299,7 @@ int runSelfTest(int argc, char** argv)
 			}
 			if (!test.screenshotOk)
 				fail("screenshot could not be saved to " + test.screenshotPath);
-			else if (test.distinctColors < 16)
+			else if (test.distinctColors < 4) // a frame with nothing drawn has one colour; an empty UI (menu bar + prompt) has about 15
 				fail("screenshot looks blank (" + std::to_string(test.distinctColors) + " colours): the ImGui shaders probably failed, see the ERROR lines above");
 			else
 				ok("screenshot: " + test.screenshotPath + " (" + std::to_string(test.distinctColors) + " sampled colours)");
