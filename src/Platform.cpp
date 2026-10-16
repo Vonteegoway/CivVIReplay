@@ -17,9 +17,13 @@
 #include <csignal>
 #include <cstdio>
 #include <cstring>
+#include <cstdint>
 #include <execinfo.h>
 #include <fcntl.h>
 #include <unistd.h>
+#ifdef __APPLE__
+#include <mach-o/dyld.h>
+#endif
 #endif
 
 namespace Platform
@@ -152,7 +156,7 @@ namespace Platform
 		SetUnhandledExceptionFilter(unhandled_handler);
 	}
 
-#else // POSIX / Linux
+#else // POSIX: Linux and macOS
 
 	static fs::path homeDir()
 	{
@@ -160,6 +164,91 @@ namespace Platform
 		return home ? fs::path(home) : fs::path("/");
 	}
 
+	// Where Civ VI keeps its per-user data: the Windows layout is used by the Windows build
+	// under Wine (Proton, CrossOver, Whisky...), the native one by Aspyr's Linux / macOS ports.
+	struct CivLocation
+	{
+		fs::path userDir; // ".../Sid Meier's Civilization VI" (Saves, Mods...)
+		fs::path cacheDb; // DebugGameplay.sqlite
+	};
+
+	static CivLocation windowsLayout(const fs::path& windowsUserDir)
+	{
+		return {
+			windowsUserDir / "Documents" / "My Games" / civFolderName,
+			windowsUserDir / "AppData" / "Local" / "Firaxis Games" / civFolderName / "Cache" / "DebugGameplay.sqlite",
+		};
+	}
+
+	static CivLocation nativeLayout(const fs::path& civDir)
+	{
+		return { civDir, civDir / "Cache" / "DebugGameplay.sqlite" };
+	}
+
+#ifdef __APPLE__
+	fs::path exeDir()
+	{
+		uint32_t size = 0;
+		_NSGetExecutablePath(nullptr, &size);
+		std::string buffer(size, '\0');
+		if (size == 0 || _NSGetExecutablePath(buffer.data(), &size) != 0)
+			return fs::current_path();
+		buffer.resize(std::strlen(buffer.c_str()));
+		std::error_code ec;
+		fs::path exe = fs::canonical(fs::path(buffer), ec);
+		if (ec)
+			exe = fs::path(buffer);
+		return exe.parent_path();
+	}
+
+	fs::path configDir()
+	{
+		fs::path dir = homeDir() / "Library" / "Application Support" / "CivVIReplay";
+		std::error_code ec;
+		fs::create_directories(dir, ec);
+		return dir;
+	}
+
+	std::vector<fs::path> steamRoots()
+	{
+		std::vector<fs::path> roots;
+		fs::path steam = homeDir() / "Library" / "Application Support" / "Steam";
+		if (isDir(steam / "steamapps"))
+			roots.push_back(steam);
+		return roots;
+	}
+
+	// Candidate Civ VI data locations, most likely first:
+	// the Steam (Aspyr) Mac build, then the Windows build inside CrossOver or Whisky bottles.
+	static std::vector<CivLocation> civLocations()
+	{
+		std::vector<CivLocation> locations;
+		const fs::path appSupport = homeDir() / "Library" / "Application Support";
+		locations.push_back(nativeLayout(appSupport / civFolderName));
+
+		const fs::path bottleRoots[] = {
+			appSupport / "CrossOver" / "Bottles",
+			homeDir() / "Library" / "Containers" / "com.isaacmarovitz.Whisky" / "Bottles",
+		};
+		for (const fs::path& root : bottleRoots)
+		{
+			std::error_code ec;
+			for (fs::directory_iterator bottle(root, ec), end; !ec && bottle != end; bottle.increment(ec))
+			{
+				fs::path users = bottle->path() / "drive_c" / "users";
+				std::error_code ec2;
+				for (fs::directory_iterator user(users, ec2), end2; !ec2 && user != end2; user.increment(ec2))
+				{
+					const std::string name = user->path().filename().string();
+					if (name == "Public" || name == "Default")
+						continue;
+					locations.push_back(windowsLayout(user->path()));
+				}
+			}
+		}
+		return locations;
+	}
+#else
 	fs::path exeDir()
 	{
 		std::error_code ec;
@@ -202,52 +291,38 @@ namespace Platform
 		return roots;
 	}
 
-	// Proton prefix user folder for Civ VI (app 289070), empty if Civ VI never ran under Proton
-	static fs::path protonUserDir()
+	// Candidate Civ VI data locations, most likely first:
+	// the Proton prefix of app 289070, then the native (Aspyr) Linux port.
+	static std::vector<CivLocation> civLocations()
 	{
+		std::vector<CivLocation> locations;
 		for (const fs::path& lib : steamLibraries())
 		{
-			fs::path p = lib / "steamapps" / "compatdata" / "289070" / "pfx" / "drive_c" / "users" / "steamuser";
-			if (isDir(p))
-				return p;
+			fs::path user = lib / "steamapps" / "compatdata" / "289070" / "pfx" / "drive_c" / "users" / "steamuser";
+			if (isDir(user))
+				locations.push_back(windowsLayout(user));
 		}
-		return fs::path();
-	}
-
-	// Native Linux port (Aspyr) data folder
-	static fs::path aspyrDir()
-	{
 		const char* xdg = std::getenv("XDG_DATA_HOME");
 		fs::path base = (xdg && *xdg) ? fs::path(xdg) : homeDir() / ".local" / "share";
-		return base / "aspyr-media" / civFolderName;
+		locations.push_back(nativeLayout(base / "aspyr-media" / civFolderName));
+		return locations;
 	}
+#endif
 
 	fs::path civUserDir()
 	{
-		fs::path proton = protonUserDir();
-		if (!proton.empty())
-		{
-			fs::path p = proton / "Documents" / "My Games" / civFolderName;
-			if (isDir(p))
-				return p;
-		}
-		fs::path aspyr = aspyrDir();
-		if (isDir(aspyr))
-			return aspyr;
+		for (const CivLocation& loc : civLocations())
+			if (isDir(loc.userDir))
+				return loc.userDir;
 		return homeDir();
 	}
 
 	fs::path civCacheDbPath()
 	{
-		fs::path proton = protonUserDir();
-		if (!proton.empty())
-		{
-			fs::path p = proton / "AppData" / "Local" / "Firaxis Games" / civFolderName / "Cache" / "DebugGameplay.sqlite";
-			if (isFile(p))
-				return p;
-		}
-		fs::path p = aspyrDir() / "Cache" / "DebugGameplay.sqlite";
-		return isFile(p) ? p : fs::path();
+		for (const CivLocation& loc : civLocations())
+			if (isFile(loc.cacheDb))
+				return loc.cacheDb;
+		return fs::path();
 	}
 
 	void sleepMs(unsigned int ms)
@@ -285,7 +360,16 @@ namespace Platform
 
 	fs::path assetPath(const fs::path& relative)
 	{
-		return exeDir() / relative;
+		static const fs::path root = []() {
+			fs::path dir = exeDir();
+#ifdef __APPLE__
+			// Inside an app bundle the assets are in Contents/Resources, next to Contents/MacOS
+			if (dir.filename() == "MacOS" && dir.parent_path().filename() == "Contents")
+				return dir.parent_path() / "Resources";
+#endif
+			return dir;
+		}();
+		return root / relative;
 	}
 
 	std::vector<fs::path> steamLibraries()

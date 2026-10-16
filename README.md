@@ -38,7 +38,7 @@ To build the project, you need:
 - Windows x64
 - OpenGL-compatible GPU
 
-The project targets Windows and Linux (see [Linux](#-linux)).
+The project targets Windows, Linux (see [Linux](#-linux)) and macOS (see [macOS](#-macos)).
 
 ### Third-Party Dependencies
 
@@ -83,6 +83,34 @@ To launch it from Steam (e.g. in Big Picture), use *Games → Add a Non-Steam Ga
 
 `CivVIReplay --dump <save>...` parses saves without opening a window and prints a summary (turn, map, players), which is handy for checking the parser.
 
+## 🍎 macOS
+
+Civ VI Replay runs natively on Apple Silicon and Intel Macs (macOS 11 or later). The [Build workflow](../../actions/workflows/build.yml) produces a ready-made `CivVIReplay-macOS.zip`: download it from the latest run, unzip, and move `CivVIReplay.app` wherever you like.
+
+The app is not notarized, so the first launch is blocked by Gatekeeper. Either open it once, then allow it in *System Settings → Privacy & Security → Open Anyway*, or clear the quarantine flag:
+
+```bash
+xattr -dr com.apple.quarantine /Applications/CivVIReplay.app
+```
+
+To build it yourself (GLFW is fetched and built automatically, so only the Xcode command line tools and CMake are needed):
+
+```bash
+xcode-select --install   # once
+brew install cmake       # or any other CMake ≥ 3.16
+cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
+cmake --build build -j
+open build/CivVIReplay.app
+```
+
+Paths are detected automatically:
+
+- **Civ VI install**: from Steam's `libraryfolders.vdf` in `~/Library/Application Support/Steam`
+- **Saves / mods / game database**: the Steam (Aspyr) build's `~/Library/Application Support/Sid Meier's Civilization VI`, otherwise the Windows build inside a CrossOver or Whisky bottle (`drive_c/users/<user>/Documents/My Games/...`)
+- **Settings** (`imgui.ini`) and `crash.log`: `~/Library/Application Support/CivVIReplay/`
+
+`CivVIReplay.app/Contents/MacOS/CivVIReplay --dump <save>...` works as on Linux.
+
 ## 🚧 Current Limitations
 
 - Tested on specific Civilization VI versions
@@ -96,7 +124,6 @@ To launch it from Steam (e.g. in Big Picture), use *Games → Add a Non-Steam Ga
 Planned improvements include:
 
 - Enhanced replay visualization
-- Linux build support
 - Introduction of automated testing
 - Improved error handling and validation
 - Refactoring of the parsing layer for greater extensibility

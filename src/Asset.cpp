@@ -78,6 +78,9 @@ void Assets::prettifyName(char* name)
 
 void Assets::setIcon(GLFWwindow* window)
 {
+#ifdef __APPLE__
+	(void)window; // macOS windows have no icon of their own (the app bundle's icon is used)
+#else
 	// Set icon
 	GLFWimage image;
 	image.pixels = stbi_load(Platform::assetPath("image/icon/icon1.png").string().c_str(), &image.width, &image.height, 0, 4);
@@ -87,6 +90,7 @@ void Assets::setIcon(GLFWwindow* window)
 		glfwSetWindowIcon(window, 1, &image);
 		stbi_image_free(image.pixels);
 	}
+#endif
 }
 
 void Asset::prettifyName()

@@ -3059,10 +3059,39 @@ void Viewer::Start(unsigned int Width, unsigned int Height) {
     if (!glfwInit())
         return;
 
+#ifdef __APPLE__
+    // macOS only exposes OpenGL 3.2+ through a forward-compatible core profile
+    const char* glsl_version = "#version 150";
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 2);
+    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+    glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
+#else
+    const char* glsl_version = "#version 130";
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
+#endif
+
     GLFWwindow* window = glfwCreateWindow(Width, Height, "CivReplay", nullptr, nullptr);
+    if (!window)
+    {
+        glfwTerminate();
+        return;
+    }
     glfwMakeContextCurrent(window);
     glfwSwapInterval(1);
     Assets::setIcon(window);
+
+    // On Retina displays the framebuffer is larger than the window; rasterize the fonts at
+    // that resolution and scale them back so the UI keeps its size but stays sharp.
+    float fontScale = 1.0f;
+    {
+        int winW = 0, winH = 0, fbW = 0, fbH = 0;
+        glfwGetWindowSize(window, &winW, &winH);
+        glfwGetFramebufferSize(window, &fbW, &fbH);
+        if (winW > 0 && fbW > winW)
+            fontScale = (float)fbW / (float)winW;
+    }
 
 
     // setup Dear ImGui context
@@ -3077,12 +3106,15 @@ void Viewer::Start(unsigned int Width, unsigned int Height) {
     io.IniFilename = iniPath.c_str();
 
     const std::string fontPath = Platform::assetPath("font/ProggyTiny.ttf").string();
-    io.Fonts->AddFontDefault();
-    io.Fonts->AddFontFromFileTTF(fontPath.c_str(), 6.0f);
-    io.Fonts->AddFontFromFileTTF(fontPath.c_str(), 8.0f);
-    io.Fonts->AddFontFromFileTTF(fontPath.c_str(), 10.0f);
-    io.Fonts->AddFontFromFileTTF(fontPath.c_str(), 14.0f);
-    io.Fonts->AddFontFromFileTTF(fontPath.c_str(), 16.0f);
+    ImFontConfig defaultConfig;
+    defaultConfig.SizePixels = 13.0f * fontScale;
+    io.Fonts->AddFontDefault(&defaultConfig);
+    io.Fonts->AddFontFromFileTTF(fontPath.c_str(), 6.0f * fontScale);
+    io.Fonts->AddFontFromFileTTF(fontPath.c_str(), 8.0f * fontScale);
+    io.Fonts->AddFontFromFileTTF(fontPath.c_str(), 10.0f * fontScale);
+    io.Fonts->AddFontFromFileTTF(fontPath.c_str(), 14.0f * fontScale);
+    io.Fonts->AddFontFromFileTTF(fontPath.c_str(), 16.0f * fontScale);
+    io.FontGlobalScale = 1.0f / fontScale;
 
     //io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;     // Enable keyboard controls
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;      // Enable Gamepad Controls
@@ -3091,10 +3123,6 @@ void Viewer::Start(unsigned int Width, unsigned int Height) {
 
     // theme
     ImGui::StyleColorsDark();
-
-    const char* glsl_version = "#version 130";
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
 
     // Setup Platform/Renderer backends
     ImGui_ImplGlfw_InitForOpenGL(window, true);
@@ -3125,7 +3153,7 @@ void Viewer::Start(unsigned int Width, unsigned int Height) {
         int display_w, display_h;
         glfwGetFramebufferSize(window, &display_w, &display_h);
         glViewport(0, 0, display_w, display_h);
-        this->WinSize = ImVec2(display_w, display_h);
+        this->WinSize = io.DisplaySize; // window size in ImGui units (differs from the framebuffer on Retina)
         glClear(GL_COLOR_BUFFER_BIT);
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 

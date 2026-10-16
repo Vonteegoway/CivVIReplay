@@ -1,5 +1,10 @@
 cmake_minimum_required(VERSION 3.16)
 
+if(APPLE)
+    # std::filesystem needs 10.15+; must be set before project()
+    set(CMAKE_OSX_DEPLOYMENT_TARGET "11.0" CACHE STRING "Minimum macOS version")
+endif()
+
 # -----------------------------
 # Project
 # -----------------------------
@@ -59,6 +64,29 @@ if(WIN32)
     )
 endif()
 
+if(APPLE)
+    # Build CivVIReplay.app; assets go to Contents/Resources (see Platform::assetPath)
+    set(CIVREPLAY_ICNS ${CMAKE_BINARY_DIR}/CivVIReplay.icns)
+    add_custom_command(OUTPUT ${CIVREPLAY_ICNS}
+        COMMAND sh ${PROJECT_SOURCE_DIR}/packaging/make-icns.sh
+                ${PROJECT_SOURCE_DIR}/assets/image/icon/icon1.png ${CIVREPLAY_ICNS}
+        DEPENDS ${PROJECT_SOURCE_DIR}/assets/image/icon/icon1.png ${PROJECT_SOURCE_DIR}/packaging/make-icns.sh
+        COMMENT "Generating CivVIReplay.icns")
+    target_sources(${PROJECT_NAME} PRIVATE ${CIVREPLAY_ICNS})
+    set_source_files_properties(${CIVREPLAY_ICNS} PROPERTIES MACOSX_PACKAGE_LOCATION Resources)
+    set_target_properties(${PROJECT_NAME} PROPERTIES
+        MACOSX_BUNDLE TRUE
+        MACOSX_BUNDLE_INFO_PLIST ${PROJECT_SOURCE_DIR}/packaging/Info.plist.in
+        MACOSX_BUNDLE_BUNDLE_NAME "Civ VI Replay"
+        MACOSX_BUNDLE_GUI_IDENTIFIER "com.github.keride.civvireplay"
+        MACOSX_BUNDLE_BUNDLE_VERSION ${PROJECT_VERSION}
+        MACOSX_BUNDLE_SHORT_VERSION_STRING ${PROJECT_VERSION}
+        MACOSX_BUNDLE_ICON_FILE CivVIReplay.icns
+    )
+    # OpenGL is deprecated on macOS but still available
+    target_compile_definitions(${PROJECT_NAME} PRIVATE GL_SILENCE_DEPRECATION)
+endif()
+
 # -----------------------------
 # Include directories
 # -----------------------------
@@ -85,7 +113,27 @@ if(WIN32)
         opengl32
     )
 else()
-    find_package(glfw3 3.3 REQUIRED)
+    # macOS has no system GLFW: build it from source by default so the app is self-contained
+    if(APPLE)
+        set(CIVREPLAY_BUNDLED_GLFW_DEFAULT ON)
+    else()
+        set(CIVREPLAY_BUNDLED_GLFW_DEFAULT OFF)
+    endif()
+    option(CIVREPLAY_BUNDLED_GLFW "Build GLFW from source instead of using the system library" ${CIVREPLAY_BUNDLED_GLFW_DEFAULT})
+    if(CIVREPLAY_BUNDLED_GLFW)
+        include(FetchContent)
+        set(GLFW_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
+        set(GLFW_BUILD_TESTS OFF CACHE BOOL "" FORCE)
+        set(GLFW_BUILD_DOCS OFF CACHE BOOL "" FORCE)
+        set(GLFW_INSTALL OFF CACHE BOOL "" FORCE)
+        FetchContent_Declare(glfw
+            GIT_REPOSITORY https://github.com/glfw/glfw.git
+            GIT_TAG 3.4
+            GIT_SHALLOW TRUE)
+        FetchContent_MakeAvailable(glfw)
+    else()
+        find_package(glfw3 3.3 REQUIRED)
+    endif()
     find_package(OpenGL REQUIRED)
     find_package(Threads REQUIRED)
     target_link_libraries(${PROJECT_NAME} PRIVATE
@@ -101,11 +149,16 @@ endif()
 # Copy runtime assets
 # -----------------------------
 set(ASSET_FOLDERS font image shader)
+if(APPLE)
+    set(ASSET_DEST_DIR "$<TARGET_BUNDLE_CONTENT_DIR:${PROJECT_NAME}>/Resources")
+else()
+    set(ASSET_DEST_DIR "$<TARGET_FILE_DIR:${PROJECT_NAME}>")
+endif()
 foreach(FOLDER ${ASSET_FOLDERS})
     add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy_directory
         "${PROJECT_SOURCE_DIR}/assets/${FOLDER}"
-        "$<TARGET_FILE_DIR:${PROJECT_NAME}>/${FOLDER}"
+        "${ASSET_DEST_DIR}/${FOLDER}"
         COMMENT "Copying ${FOLDER} to output directory"
     )
 endforeach()
