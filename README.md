@@ -110,14 +110,16 @@ Paths are detected automatically:
 
 ### Checking an installation
 
-`--selftest` checks everything that does not need a human looking at the screen: assets, the config folder, Steam and Civ VI detection, the gameplay database, parsing of any saves you pass, and finally the window, OpenGL context and fonts, of which it saves a screenshot. It prints one line per check and ends with `RESULT: PASS` or `FAIL`. If you are testing the app on a Mac for the first time, run it from Terminal and send the output and the screenshot:
+`--selftest` checks everything that does not need a human looking at the screen: assets, the config folder, Steam and Civ VI detection, the gameplay database, parsing of your five most recent saves (or the saves you pass as arguments), and finally the window, OpenGL context and fonts, of which it saves a screenshot. It prints one line per check and ends with `RESULT: PASS` or `FAIL`; the output is also written to `selftest.txt` next to the screenshot. If you are testing the app on a Mac for the first time, clear the quarantine flag as above, then run it from Terminal (adjust the path if the app is not in `/Applications`) and send the two files:
 
 ```bash
-/Applications/CivVIReplay.app/Contents/MacOS/CivVIReplay --selftest ~/Library/Application\ Support/Sid\ Meier\'s\ Civilization\ VI/*/Saves/*/*.Civ6Save
+/Applications/CivVIReplay.app/Contents/MacOS/CivVIReplay --selftest 2>&1 | tee ~/Desktop/selftest.txt
 open ~/Library/Application\ Support/CivVIReplay/selftest.png
 ```
 
-On Linux the same works with `civvireplay --selftest <saves>` (screenshot in `~/.config/civvireplay/`). The build workflow runs it on every push; the Windows and macOS runners have no usable OpenGL, so there it runs with `--headless` and only a real Mac exercises the window.
+The output and the screenshot contain your user name, the paths it searched and the player names of the saves it parsed, so look them over before sharing.
+
+On Linux the same works with `civvireplay --selftest` (files in `~/.config/civvireplay/`). The build workflow runs it on every push; the Windows and macOS runners have no usable OpenGL, so there it runs with `--headless` and only a real Mac exercises the window.
 
 Known limitation: fonts are rasterized once at startup for the display the window opens on, so moving the window between a Retina and a non-Retina screen leaves the text slightly blurry until restart.
 

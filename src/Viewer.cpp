@@ -1,5 +1,7 @@
 #define STB_IMAGE_WRITE_IMPLEMENTATION
+#define STBIW_WINDOWS_UTF8
 #include "stb_image_write.h"
+#include <set>
 #include <cstring>
 #include <vector>
 #include "Viewer.h"
@@ -3057,21 +3059,33 @@ Viewer::SelfTest* Viewer::selfTest = nullptr;
 static void glfw_error_callback(int error, const char* description)
 {
     fprintf(stderr, "GLFW Error %d: %s\n", error, description);
-    if (Viewer::selfTest && Viewer::selfTest->error.empty())
-        Viewer::selfTest->error = description;
+    if (Viewer::selfTest)
+        Viewer::selfTest->glfwErrors.push_back(description);
 }
 
 #ifndef GL_SHADING_LANGUAGE_VERSION
 #define GL_SHADING_LANGUAGE_VERSION 0x8B8C // not in the GL 1.1 header shipped with Windows
 #endif
 
-static bool saveScreenshot(const std::string& path, int width, int height)
+// Saves the back buffer as PNG; distinctColors receives a rough measure of whether anything was drawn.
+static bool saveScreenshot(const std::string& path, int width, int height, int& distinctColors)
 {
+    distinctColors = 0;
     if (width <= 0 || height <= 0)
         return false;
     std::vector<unsigned char> pixels((size_t)width * height * 4);
     glPixelStorei(GL_PACK_ALIGNMENT, 1);
     glReadPixels(0, 0, width, height, GL_RGBA, GL_UNSIGNED_BYTE, pixels.data());
+    // The window is opaque but ImGui's blending leaves alpha < 1 in the framebuffer;
+    // force it so viewers don't composite the UI over white.
+    std::set<unsigned int> colors;
+    for (size_t i = 0; i < pixels.size(); i += 4)
+    {
+        pixels[i + 3] = 255;
+        if ((i / 4) % 97 == 0) // sample
+            colors.insert((unsigned)pixels[i] << 16 | (unsigned)pixels[i + 1] << 8 | pixels[i + 2]);
+    }
+    distinctColors = (int)colors.size();
     // OpenGL rows start at the bottom
     std::vector<unsigned char> row((size_t)width * 4);
     for (int y = 0; y < height / 2; y++)
@@ -3090,7 +3104,7 @@ void Viewer::Start(unsigned int Width, unsigned int Height) {
     glfwSetErrorCallback(glfw_error_callback);
     if (!glfwInit())
     {
-        if (selfTest && selfTest->error.empty())
+        if (selfTest)
             selfTest->error = "glfwInit failed";
         return;
     }
@@ -3111,7 +3125,7 @@ void Viewer::Start(unsigned int Width, unsigned int Height) {
     GLFWwindow* window = glfwCreateWindow(Width, Height, "CivReplay", nullptr, nullptr);
     if (!window)
     {
-        if (selfTest && selfTest->error.empty())
+        if (selfTest)
             selfTest->error = "glfwCreateWindow failed";
         glfwTerminate();
         return;
@@ -3141,7 +3155,7 @@ void Viewer::Start(unsigned int Width, unsigned int Height) {
 
     // imgui.ini stores the civ/BBG paths, keep it in a writable per-user location
     static const std::string iniPath = (Platform::configDir() / "imgui.ini").string();
-    io.IniFilename = iniPath.c_str();
+    io.IniFilename = selfTest ? nullptr : iniPath.c_str(); // the self-test must not rewrite the user's settings
 
     const std::string fontPath = Platform::assetPath("font/ProggyTiny.ttf").string();
     ImFontConfig defaultConfig; // what AddFontDefault() uses when no config is given
@@ -3174,13 +3188,14 @@ void Viewer::Start(unsigned int Width, unsigned int Height) {
         glfwGetFramebufferSize(window, &fbW, &fbH);
         auto str = [](GLenum name) { const GLubyte* s = glGetString(name); return s ? (const char*)s : "?"; };
         char info[1024];
-        snprintf(info, sizeof(info), "window %dx%d, framebuffer %dx%d (font scale %.2g), OpenGL %s, renderer %s, GLSL %s, requested %s",
-            winW, winH, fbW, fbH, fontScale, str(GL_VERSION), str(GL_RENDERER), str(GL_SHADING_LANGUAGE_VERSION), glsl_version);
+        snprintf(info, sizeof(info), "window %dx%d, framebuffer %dx%d (font scale %.2g), OpenGL %s, renderer %s, GLSL %s, requested %s, GLFW %s",
+            winW, winH, fbW, fbH, fontScale, str(GL_VERSION), str(GL_RENDERER), str(GL_SHADING_LANGUAGE_VERSION), glsl_version, glfwGetVersionString());
         selfTest->windowOk = true;
-        selfTest->backendOk = backendOk;
+        selfTest->loaderOk = backendOk;
         selfTest->glInfo = info;
     }
     int frameCount = 0;
+    int readyFrame = -1;
 
     initIniHandler();
 
@@ -3188,7 +3203,7 @@ void Viewer::Start(unsigned int Width, unsigned int Height) {
     while (!glfwWindowShouldClose(window))
     {
         glfwPollEvents();
-        if (glfwGetWindowAttrib(window, GLFW_ICONIFIED) != 0)
+        if (!selfTest && glfwGetWindowAttrib(window, GLFW_ICONIFIED) != 0) // keep rendering in the self-test so it always ends
         {
             //ImGui_ImplGlfw_Sleep(10);
             Platform::sleepMs(10);
@@ -3211,10 +3226,21 @@ void Viewer::Start(unsigned int Width, unsigned int Height) {
         glClear(GL_COLOR_BUFFER_BIT);
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 
-        if (selfTest && ++frameCount == selfTest->frames)
+        if (selfTest)
         {
-            selfTest->screenshotOk = saveScreenshot(selfTest->screenshotPath, display_w, display_h);
-            glfwSetWindowShouldClose(window, GLFW_TRUE);
+            frameCount++;
+            // Textures upload over several frames (LoadAssets); wait for them, and for a save if one was expected
+            bool ready = loaded && (!selfTest->expectSaves || loader.loadedStateCount > 0);
+            if (ready && readyFrame < 0)
+                readyFrame = frameCount;
+            if ((ready && frameCount >= readyFrame + selfTest->settleFrames) || frameCount >= selfTest->maxFrames)
+            {
+                selfTest->uiReady = ready;
+                selfTest->capturedFrame = frameCount;
+                selfTest->screenshotOk = saveScreenshot(selfTest->screenshotPath, display_w, display_h, selfTest->distinctColors);
+                selfTest->glError = glGetError();
+                glfwSetWindowShouldClose(window, GLFW_TRUE);
+            }
         }
 
         glfwSwapBuffers(window);

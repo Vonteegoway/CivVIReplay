@@ -1,4 +1,6 @@
 #pragma once
+#include <string>
+#include <vector>
 #include "SaveLoader.h"
 #include "DistrictSimulator.h"
 #include "Tile.h"
@@ -44,13 +46,22 @@ struct Viewer
 	// saves a screenshot and closes. Results are written back into the struct.
 	struct SelfTest
 	{
-		int frames = 10;
+		// inputs
 		std::string screenshotPath;
+		bool expectSaves = false;  // wait for a loaded save before capturing
+		int settleFrames = 5;      // frames rendered after the UI is ready, for layout to settle
+		int maxFrames = 120;       // capture regardless after this many frames
+		// results
 		bool windowOk = false;
-		bool backendOk = false;
+		bool loaderOk = false;     // ImGui OpenGL3 backend init (GL function loader)
+		bool uiReady = false;      // assets (and saves, if expected) were loaded before the capture
 		bool screenshotOk = false;
+		int capturedFrame = 0;
+		int distinctColors = 0;    // sampled from the screenshot; a blank frame has very few
+		unsigned int glError = 0;  // glGetError() after the captured frame
 		std::string glInfo;
 		std::string error;
+		std::vector<std::string> glfwErrors;
 	};
 	static SelfTest* selfTest;
 	int iCurrentState;

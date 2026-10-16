@@ -55,6 +55,20 @@ endif()
 
 add_executable(${PROJECT_NAME} ${SOURCES} ${IMGUI_SOURCES} ${SQLITE_SOURCES} ${PLATFORM_SOURCES})
 
+# Commit shown by --selftest, so a tester's report can be matched to a build
+find_package(Git QUIET)
+set(CIVREPLAY_GIT_COMMIT "unknown")
+if(GIT_FOUND)
+    execute_process(COMMAND ${GIT_EXECUTABLE} rev-parse --short HEAD
+        WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
+        OUTPUT_VARIABLE CIVREPLAY_GIT_COMMIT_OUT OUTPUT_STRIP_TRAILING_WHITESPACE ERROR_QUIET)
+    if(CIVREPLAY_GIT_COMMIT_OUT)
+        set(CIVREPLAY_GIT_COMMIT ${CIVREPLAY_GIT_COMMIT_OUT})
+    endif()
+endif()
+set_source_files_properties(${PROJECT_SOURCE_DIR}/src/SelfTest.cpp PROPERTIES
+    COMPILE_DEFINITIONS CIVREPLAY_GIT_COMMIT="${CIVREPLAY_GIT_COMMIT}")
+
 if(WIN32)
     # Force proper C++ linkage and subsystem
     set_target_properties(${PROJECT_NAME} PROPERTIES

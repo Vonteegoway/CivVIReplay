@@ -62,6 +62,13 @@ static int run()
 
 #ifdef _WIN32
 int __stdcall WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, char* lpCmdLine, int nShowCmd) {
+    const bool commandLine = __argc > 1 && (!strcmp(__argv[1], "--dump") || !strcmp(__argv[1], "--selftest"));
+    if (commandLine && AttachConsole(ATTACH_PARENT_PROCESS)) // /SUBSYSTEM:WINDOWS has no console of its own
+    {
+        FILE* f;
+        freopen_s(&f, "CONOUT$", "w", stdout);
+        freopen_s(&f, "CONOUT$", "w", stderr);
+    }
     if (__argc > 2 && !strcmp(__argv[1], "--dump"))
         return dumpSaves(__argc - 2, __argv + 2);
     if (__argc > 1 && !strcmp(__argv[1], "--selftest"))
