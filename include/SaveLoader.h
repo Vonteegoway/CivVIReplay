@@ -1,4 +1,6 @@
 #pragma once
+#include <atomic>
+#include <cstdio>
 #include <mutex>
 #include <cstdint>
 #include <queue>
@@ -52,7 +54,16 @@ struct SaveLoader {
 	fs::path bbgPath = "C:/Program Files (x86)/Steam/SteamApps/workshop/content/289070/";
 	bool steamInstall = false;
 	bool waitForCivPaths = true; // false: parse saves even when the Civ VI install / BBG folders are unknown
-	std::string fatalError;      // set when the loader thread cannot continue (shown by the UI)
+	// Set when the loader thread cannot continue; shown by the UI. Written once by the loader
+	// thread before hasFatalError is raised, so readers check the flag first.
+	std::string fatalError;
+	std::atomic<bool> hasFatalError{ false };
+	void setFatalError(const std::string& message)
+	{
+		fatalError = message;
+		fprintf(stderr, "%s\n", message.c_str());
+		hasFatalError = true;
+	}
 	bool isValidBBGPath();
 	bool isValidCivPath();
 	fs::path RootFolder;

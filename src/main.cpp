@@ -30,11 +30,8 @@ static int dumpSaves(int count, char** files)
         fprintf(stderr, "error: %s\n", e.what());
         return 1;
     }
-    if (!loader.fatalError.empty())
-    {
-        fprintf(stderr, "error: %s\n", loader.fatalError.c_str());
-        return 1;
-    }
+    if (loader.hasFatalError)
+        return 1; // message already printed
 
     printf("database: %s\n", loader.assets.database.path.u8string().c_str());
     printf("image assets: %zu / %zu database types\n", loader.assets.imageAssets.size(), loader.assets.assets.size());
@@ -73,8 +70,11 @@ static int run()
         }
         catch (const std::exception& e)
         {
-            loader.fatalError = std::string("Unexpected error while loading: ") + e.what();
-            fprintf(stderr, "%s\n", loader.fatalError.c_str());
+            loader.setFatalError(std::string("Unexpected error while loading: ") + e.what());
+        }
+        catch (...)
+        {
+            loader.setFatalError("Unexpected error while loading");
         }
     });
     Viewer v(1280, 720);

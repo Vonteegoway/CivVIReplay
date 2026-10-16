@@ -1,6 +1,7 @@
 #include <CivVIDatabase.h>
 #include <sstream>
 #include <filesystem>
+#include <cstring>
 #include "Platform.h"
 
 CivVIDatabase::CivVIDatabase() : database(":memory:")
@@ -13,8 +14,16 @@ static int countRow(void* data, int, char**, char**)
 	return 0;
 }
 
-// sqlite3_open only looks at the file on the first query: an empty, truncated or foreign file
-// opens fine and fails later. Probe the table everything else starts from.
+// Every table Assets::InitAll reads. Keep in sync with the GetTable calls in Asset.cpp.
+static const char* const requiredTables[] = {
+	"Types", "UnitUpgrades", "UnitReplaces", "Governors", "Features",
+	"TERRAIN_YIELDCHANGES", "FEATURE_YIELDCHANGES", "Resource_YieldChanges",
+	"IMPROVEMENT_YIELDCHANGES", "IMPROVEMENT_BONUSYIELDCHANGES",
+};
+
+// sqlite3_open only looks at the file on the first query: an empty, truncated, foreign or
+// older-schema file opens fine and fails later. Query every table InitAll needs up front, so
+// any mismatch falls back to the bundled copy instead of failing halfway through loading.
 static bool usable(Database& database, const std::filesystem::path& path, std::string& why)
 {
 	if (!database.openFile(path))
@@ -24,12 +33,15 @@ static bool usable(Database& database, const std::filesystem::path& path, std::s
 	}
 	try
 	{
-		int rows = 0;
-		database.query("SELECT * FROM Types LIMIT 1", countRow, &rows);
-		if (rows == 0)
+		for (const char* table : requiredTables)
 		{
-			why = path.u8string() + " has no gameplay data (empty Types table)";
-			return false;
+			int rows = 0;
+			database.query(std::string("SELECT * FROM ") + table + " LIMIT 1", countRow, &rows);
+			if (rows == 0 && !strcmp(table, "Types"))
+			{
+				why = path.u8string() + " has no gameplay data (empty Types table)";
+				return false;
+			}
 		}
 	}
 	catch (const std::exception& e)

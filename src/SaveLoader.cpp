@@ -424,8 +424,7 @@ void SaveLoader::LoadSave(bool untilEnd)
     }
     catch (const std::exception& e)
     {
-        fatalError = std::string("Could not load the gameplay database: ") + e.what();
-        fprintf(stderr, "%s\n", fatalError.c_str());
+        setFatalError(std::string("Could not load the gameplay database: ") + e.what());
         endLoadCivDb = true;
         return;
     }

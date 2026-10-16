@@ -658,7 +658,7 @@ bool civIsRunning()
 }
 
 void Viewer::DrawGUI(){
-    if (!loader.fatalError.empty())
+    if (loader.hasFatalError)
     {
         ImGui::OpenPopup("CivVIReplay cannot start");
         if (ImGui::BeginPopupModal("CivVIReplay cannot start", nullptr, ImGuiWindowFlags_AlwaysAutoResize))

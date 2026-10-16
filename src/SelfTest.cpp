@@ -191,7 +191,7 @@ int runSelfTest(int argc, char** argv)
 	loader.LoadSave(true);
 	if (!loader.assets.database.warning.empty())
 		warn(loader.assets.database.warning);
-	if (!loader.fatalError.empty())
+	if (loader.hasFatalError)
 		fail(loader.fatalError);
 	info("database in use: " + (loader.assets.database.path.empty() ? std::string("none") : str(loader.assets.database.path)));
 	int leaders = 0;
