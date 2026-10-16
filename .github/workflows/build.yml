@@ -1,0 +1,48 @@
+name: Build
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  linux:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install dependencies
+        run: sudo apt-get update && sudo apt-get install -y cmake build-essential libglfw3-dev libgl-dev
+      - name: Configure
+        run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
+      - name: Build
+        run: cmake --build build -j
+
+  macos:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Configure
+        run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
+      - name: Build
+        run: cmake --build build -j3
+      - name: Ad-hoc sign
+        run: codesign --force --deep --sign - build/CivVIReplay.app
+      - name: Package
+        run: ditto -c -k --keepParent build/CivVIReplay.app CivVIReplay-macOS.zip
+      - uses: actions/upload-artifact@v4
+        with:
+          name: CivVIReplay-macOS
+          path: CivVIReplay-macOS.zip
+
+  windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Configure
+        run: cmake -S . -B build -A x64
+      - name: Build
+        run: cmake --build build --config Release -j
+      - uses: actions/upload-artifact@v4
+        with:
+          name: CivVIReplay-Windows
+          path: build/Release/
