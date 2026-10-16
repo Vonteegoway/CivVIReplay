@@ -8,7 +8,7 @@ endif()
 # -----------------------------
 # Project
 # -----------------------------
-project(CivVIReplay VERSION 1.0 LANGUAGES C CXX)
+project(CivVIReplay VERSION 6.1 LANGUAGES C CXX)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
@@ -79,7 +79,7 @@ if(GIT_FOUND)
     endforeach()
 endif()
 set_source_files_properties(${PROJECT_SOURCE_DIR}/src/SelfTest.cpp PROPERTIES
-    COMPILE_DEFINITIONS CIVREPLAY_GIT_COMMIT="${CIVREPLAY_GIT_COMMIT}")
+    COMPILE_DEFINITIONS "CIVREPLAY_GIT_COMMIT=\"${CIVREPLAY_GIT_COMMIT}\";CIVREPLAY_VERSION=\"${PROJECT_VERSION}\"")
 
 if(WIN32)
     # Force proper C++ linkage and subsystem

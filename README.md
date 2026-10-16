@@ -28,6 +28,10 @@ The project was developed as both a practical tool for the multiplayer ecosystem
 
 ---
 
+## ⬇️ Download
+
+Ready-made builds for Windows and macOS are on the [Releases page](../../releases/latest). On Linux, build from source as described [below](#-linux).
+
 ## 🧱 Prerequisites
 
 To build the project, you need:
@@ -84,7 +88,7 @@ To launch it from Steam (e.g. in Big Picture), use *Games → Add a Non-Steam Ga
 
 ## 🍎 macOS
 
-Civ VI Replay runs natively on Apple Silicon and Intel Macs (macOS 11 or later). The [Build workflow](../../actions/workflows/build.yml) produces a ready-made universal `CivVIReplay-macOS.zip`: download it from the latest run (this needs a GitHub login; artifacts expire after 90 days), unzip, and move `CivVIReplay.app` wherever you like.
+Civ VI Replay runs natively on Apple Silicon and Intel Macs (macOS 11 or later). Download `CivVIReplay-macOS.zip` from the [latest release](../../releases/latest), unzip it, and move `CivVIReplay.app` to Applications.
 
 The app is not notarized, so the first launch is blocked by Gatekeeper. Either open it once, then allow it in *System Settings → Privacy & Security → Open Anyway*, or clear the quarantine flag:
 

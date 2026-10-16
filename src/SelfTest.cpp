@@ -18,6 +18,9 @@
 #ifndef CIVREPLAY_GIT_COMMIT
 #define CIVREPLAY_GIT_COMMIT "unknown"
 #endif
+#ifndef CIVREPLAY_VERSION
+#define CIVREPLAY_VERSION "dev"
+#endif
 
 namespace fs = std::filesystem;
 
@@ -131,7 +134,7 @@ int runSelfTest(int argc, char** argv)
 	const fs::path configDir = Platform::configDir();
 	logFile.open(configDir / "selftest.txt", std::ios::trunc);
 
-	info(std::string("CivVIReplay self-test, build ") + CIVREPLAY_GIT_COMMIT + " (" + __DATE__ + "), " + systemDescription());
+	info(std::string("CivVIReplay ") + CIVREPLAY_VERSION + " self-test, build " + CIVREPLAY_GIT_COMMIT + " (" + __DATE__ + "), " + systemDescription());
 
 	// Assets next to the executable (or in the app bundle)
 	info("executable: " + str(Platform::exeDir()));
