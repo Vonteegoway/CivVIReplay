@@ -54,10 +54,10 @@ struct SaveLoader {
 	fs::path bbgPath = "C:/Program Files (x86)/Steam/SteamApps/workshop/content/289070/";
 	bool steamInstall = false;
 	bool waitForCivPaths = true; // false: parse saves even when the Civ VI install / BBG folders are unknown
+	bool printPaths = true;      // print each save path as it is parsed (the self-test prints its own)
 	// Set when the loader thread cannot continue; shown by the UI. Written once by the loader
 	// thread before hasFatalError is raised, so readers check the flag first.
 	std::string fatalError;
-	bool printPaths = true; // print each save path as it is parsed (the self-test prints its own)
 	std::atomic<bool> hasFatalError{ false };
 	void setFatalError(const std::string& message)
 	{

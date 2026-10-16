@@ -319,9 +319,20 @@ namespace Platform
 	}
 #endif
 
+	// A location counts as "in use" when it has a Saves folder: on macOS the pre-2023 folder is the
+	// parent of the current one, and a leftover empty folder must not win over a real install.
+	static bool hasSaves(const CivLocation& loc)
+	{
+		return isDir(loc.userDir / "Saves");
+	}
+
 	fs::path civUserDir()
 	{
-		for (const CivLocation& loc : civLocations())
+		const std::vector<CivLocation> locations = civLocations();
+		for (const CivLocation& loc : locations)
+			if (hasSaves(loc))
+				return loc.userDir;
+		for (const CivLocation& loc : locations)
 			if (isDir(loc.userDir))
 				return loc.userDir;
 		return homeDir();
@@ -333,7 +344,7 @@ namespace Platform
 		// Prefer the database of the install whose saves we use, so an updated install never
 		// picks up a stale database left behind by an older layout...
 		for (const CivLocation& loc : locations)
-			if (isDir(loc.userDir) && isFile(loc.cacheDb))
+			if (hasSaves(loc) && isFile(loc.cacheDb))
 				return loc.cacheDb;
 		// ...otherwise any database at all (CivVIDatabase rejects unusable ones)
 		for (const CivLocation& loc : locations)

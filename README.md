@@ -75,7 +75,7 @@ Paths are detected automatically:
 
 - **Civ VI install**: from Steam's `libraryfolders.vdf` (`~/.steam/steam`, `~/.local/share/Steam` or Flatpak Steam)
 - **Saves / mods**: the Proton prefix (`steamapps/compatdata/289070/pfx/.../Documents/My Games/Sid Meier's Civilization VI`), otherwise the native port's `~/.local/share/aspyr-media/Sid Meier's Civilization VI`
-- **Game database**: the Proton prefix's `AppData/Local/Firaxis Games/.../Cache/DebugGameplay.sqlite`, falling back to the bundled `image/database/backup.sqlite`
+- **Game database**: the Proton prefix's `AppData/Local/Firaxis Games/.../Cache/DebugGameplay.sqlite`, otherwise the native port's `.../aspyr-media/Sid Meier's Civilization VI/Cache/DebugGameplay.sqlite`, falling back to the bundled `image/database/backup.sqlite`
 - **Settings** (`imgui.ini`) and `crash.log`: `~/.config/civvireplay/`
 
 To launch it from Steam (e.g. in Big Picture), use *Games → Add a Non-Steam Game* and pick `~/.local/share/civvireplay/CivVIReplay`.
@@ -106,7 +106,7 @@ Paths are detected automatically:
 
 - **Civ VI install**: from Steam's `libraryfolders.vdf` in `~/Library/Application Support/Steam`
 - **Saves / mods**: the Steam (Aspyr) build's `~/Library/Application Support/Sid Meier's Civilization VI/Sid Meier's Civilization VI` (or the parent folder on installs older than 2023), otherwise the Windows build inside a CrossOver or Whisky bottle (`drive_c/users/<user>/Documents/My Games/...`)
-- **Game database**: `~/Library/Application Support/Sid Meier's Civilization VI/Firaxis Games/Sid Meier's Civilization VI/Cache/DebugGameplay.sqlite`, taken from the same install as the saves, falling back to the bundled copy
+- **Game database**: `~/Library/Application Support/Sid Meier's Civilization VI/Firaxis Games/Sid Meier's Civilization VI/Cache/DebugGameplay.sqlite` (pre-2023 installs: `.../Sid Meier's Civilization VI/Cache`; bottles: `drive_c/users/<user>/AppData/Local/Firaxis Games/...`), preferring the install the saves come from, falling back to the bundled copy
 - **Settings** (`imgui.ini`) and `crash.log`: `~/Library/Application Support/CivVIReplay/`
 
 ### Checking an installation

@@ -65,6 +65,18 @@ if(GIT_FOUND)
     if(CIVREPLAY_GIT_COMMIT_OUT)
         set(CIVREPLAY_GIT_COMMIT ${CIVREPLAY_GIT_COMMIT_OUT})
     endif()
+    # Re-run this when HEAD moves (checkout, pull, commit) so an incremental build reports the right commit
+    execute_process(COMMAND ${GIT_EXECUTABLE} rev-parse --absolute-git-dir
+        WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
+        OUTPUT_VARIABLE CIVREPLAY_GIT_DIR OUTPUT_STRIP_TRAILING_WHITESPACE ERROR_QUIET)
+    execute_process(COMMAND ${GIT_EXECUTABLE} symbolic-ref -q HEAD
+        WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
+        OUTPUT_VARIABLE CIVREPLAY_GIT_REF OUTPUT_STRIP_TRAILING_WHITESPACE ERROR_QUIET)
+    foreach(f HEAD ${CIVREPLAY_GIT_REF} packed-refs)
+        if(CIVREPLAY_GIT_DIR AND EXISTS "${CIVREPLAY_GIT_DIR}/${f}")
+            set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS "${CIVREPLAY_GIT_DIR}/${f}")
+        endif()
+    endforeach()
 endif()
 set_source_files_properties(${PROJECT_SOURCE_DIR}/src/SelfTest.cpp PROPERTIES
     COMPILE_DEFINITIONS CIVREPLAY_GIT_COMMIT="${CIVREPLAY_GIT_COMMIT}")
