@@ -5,6 +5,9 @@ on:
   pull_request:
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 jobs:
   linux:
     runs-on: ubuntu-latest
@@ -15,7 +18,7 @@ jobs:
       - name: Configure
         run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
       - name: Build
-        run: cmake --build build -j
+        run: cmake --build build -j4
       - name: Self-test
         run: xvfb-run -a -s "-screen 0 1280x720x24" ./build/CivVIReplay --selftest
       - uses: actions/upload-artifact@v4
@@ -26,23 +29,26 @@ jobs:
           if-no-files-found: ignore
 
   macos:
-    runs-on: macos-latest
+    runs-on: macos-15
     steps:
       - uses: actions/checkout@v4
-      - name: Configure
-        run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
+      - name: Configure (universal binary)
+        run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DCMAKE_OSX_ARCHITECTURES="arm64;x86_64"
       - name: Build
         run: cmake --build build -j3
       - name: Ad-hoc sign
-        run: codesign --force --deep --sign - build/CivVIReplay.app
-      - name: Self-test
-        run: build/CivVIReplay.app/Contents/MacOS/CivVIReplay --selftest
-      - uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: selftest-macos
-          path: ~/Library/Application Support/CivVIReplay/selftest.png
-          if-no-files-found: ignore
+        run: codesign --force --sign - build/CivVIReplay.app
+      - name: Check bundle
+        run: |
+          plutil -lint build/CivVIReplay.app/Contents/Info.plist
+          test -f build/CivVIReplay.app/Contents/Resources/font/ProggyTiny.ttf
+          test -f build/CivVIReplay.app/Contents/Resources/CivVIReplay.icns
+          lipo -info build/CivVIReplay.app/Contents/MacOS/CivVIReplay
+          codesign --verify --verbose build/CivVIReplay.app
+      # The virtual macOS runners have no OpenGL pixel formats ("NSGL: Failed to find a suitable
+      # pixel format"), so the window part of the self-test can only run on a real Mac.
+      - name: Self-test (no window on the runner)
+        run: build/CivVIReplay.app/Contents/MacOS/CivVIReplay --selftest --headless
       - name: Package
         run: ditto -c -k --keepParent build/CivVIReplay.app CivVIReplay-macOS.zip
       - uses: actions/upload-artifact@v4

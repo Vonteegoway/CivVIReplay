@@ -224,6 +224,8 @@ namespace Platform
 	{
 		std::vector<CivLocation> locations;
 		const fs::path appSupport = homeDir() / "Library" / "Application Support";
+		// Aspyr's 2023 update nested the data one level deeper (".../Civilization VI/Sid Meier's Civilization VI")
+		locations.push_back(nativeLayout(appSupport / civFolderName / civFolderName));
 		locations.push_back(nativeLayout(appSupport / civFolderName));
 
 		const fs::path bottleRoots[] = {
@@ -304,6 +306,7 @@ namespace Platform
 		}
 		const char* xdg = std::getenv("XDG_DATA_HOME");
 		fs::path base = (xdg && *xdg) ? fs::path(xdg) : homeDir() / ".local" / "share";
+		locations.push_back(nativeLayout(base / "aspyr-media" / civFolderName / civFolderName));
 		locations.push_back(nativeLayout(base / "aspyr-media" / civFolderName));
 		return locations;
 	}

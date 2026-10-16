@@ -3144,8 +3144,10 @@ void Viewer::Start(unsigned int Width, unsigned int Height) {
     io.IniFilename = iniPath.c_str();
 
     const std::string fontPath = Platform::assetPath("font/ProggyTiny.ttf").string();
-    ImFontConfig defaultConfig;
+    ImFontConfig defaultConfig; // what AddFontDefault() uses when no config is given
     defaultConfig.SizePixels = 13.0f * fontScale;
+    defaultConfig.OversampleH = defaultConfig.OversampleV = 1;
+    defaultConfig.PixelSnapH = true;
     io.Fonts->AddFontDefault(&defaultConfig);
     io.Fonts->AddFontFromFileTTF(fontPath.c_str(), 6.0f * fontScale);
     io.Fonts->AddFontFromFileTTF(fontPath.c_str(), 8.0f * fontScale);

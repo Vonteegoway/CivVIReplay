@@ -10,7 +10,7 @@ namespace Platform
 
 	// Directory containing the executable (assets are resolved relative to it)
 	fs::path exeDir();
-	// exeDir() / relative
+	// Asset folder (next to the executable, or Contents/Resources in a macOS app bundle) / relative
 	fs::path assetPath(const fs::path& relative);
 
 	// Writable per-user config directory (created on demand)
@@ -29,6 +29,6 @@ namespace Platform
 	void sleepMs(unsigned int ms);
 	void installCrashHandler();
 
-	// Case-insensitive lookup of "<folder>/<name>.png" under exeDir()/image. Empty if missing.
+	// Case-insensitive lookup of "<folder>/<name>.png" under assetPath("image"). Empty if missing.
 	std::string findImage(const std::string& folder, const std::string& name);
 }

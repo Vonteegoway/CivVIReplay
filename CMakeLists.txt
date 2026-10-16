@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.16)
 
-if(APPLE)
+if(APPLE AND NOT DEFINED CMAKE_OSX_DEPLOYMENT_TARGET AND NOT DEFINED ENV{MACOSX_DEPLOYMENT_TARGET})
     # std::filesystem needs 10.15+; must be set before project()
     set(CMAKE_OSX_DEPLOYMENT_TARGET "11.0" CACHE STRING "Minimum macOS version")
 endif()
@@ -128,7 +128,7 @@ else()
         set(GLFW_INSTALL OFF CACHE BOOL "" FORCE)
         FetchContent_Declare(glfw
             GIT_REPOSITORY https://github.com/glfw/glfw.git
-            GIT_TAG 3.4
+            GIT_TAG 7b6aead9fb88b3623e3b3725ebb42670cbe4c579 # tag 3.4
             GIT_SHALLOW TRUE)
         FetchContent_MakeAvailable(glfw)
     else()

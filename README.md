@@ -34,8 +34,7 @@ To build the project, you need:
 
 - **CMake ≥ 3.16**
 - **C++17 compatible compiler**
-  - Recommended: Visual Studio 2022 (MSVC)
-- Windows x64
+  - Recommended: Visual Studio 2022 (MSVC) on Windows
 - OpenGL-compatible GPU
 
 The project targets Windows, Linux (see [Linux](#-linux)) and macOS (see [macOS](#-macos)).
@@ -85,7 +84,7 @@ To launch it from Steam (e.g. in Big Picture), use *Games → Add a Non-Steam Ga
 
 ## 🍎 macOS
 
-Civ VI Replay runs natively on Apple Silicon and Intel Macs (macOS 11 or later). The [Build workflow](../../actions/workflows/build.yml) produces a ready-made `CivVIReplay-macOS.zip`: download it from the latest run, unzip, and move `CivVIReplay.app` wherever you like.
+Civ VI Replay runs natively on Apple Silicon and Intel Macs (macOS 11 or later). The [Build workflow](../../actions/workflows/build.yml) produces a ready-made universal `CivVIReplay-macOS.zip`: download it from the latest run (this needs a GitHub login; artifacts expire after 90 days), unzip, and move `CivVIReplay.app` wherever you like.
 
 The app is not notarized, so the first launch is blocked by Gatekeeper. Either open it once, then allow it in *System Settings → Privacy & Security → Open Anyway*, or clear the quarantine flag:
 
@@ -106,7 +105,7 @@ open build/CivVIReplay.app
 Paths are detected automatically:
 
 - **Civ VI install**: from Steam's `libraryfolders.vdf` in `~/Library/Application Support/Steam`
-- **Saves / mods / game database**: the Steam (Aspyr) build's `~/Library/Application Support/Sid Meier's Civilization VI`, otherwise the Windows build inside a CrossOver or Whisky bottle (`drive_c/users/<user>/Documents/My Games/...`)
+- **Saves / mods / game database**: the Steam (Aspyr) build's `~/Library/Application Support/Sid Meier's Civilization VI` (or the nested `.../Sid Meier's Civilization VI/Sid Meier's Civilization VI` folder newer versions use), otherwise the Windows build inside a CrossOver or Whisky bottle (`drive_c/users/<user>/Documents/My Games/...`)
 - **Settings** (`imgui.ini`) and `crash.log`: `~/Library/Application Support/CivVIReplay/`
 
 ### Checking an installation
@@ -118,7 +117,9 @@ Paths are detected automatically:
 open ~/Library/Application\ Support/CivVIReplay/selftest.png
 ```
 
-On Linux the same works with `civvireplay --selftest <saves>` (screenshot in `~/.config/civvireplay/`). The build workflow runs it on every push, with `--headless` on Windows where the runner has no OpenGL.
+On Linux the same works with `civvireplay --selftest <saves>` (screenshot in `~/.config/civvireplay/`). The build workflow runs it on every push; the Windows and macOS runners have no usable OpenGL, so there it runs with `--headless` and only a real Mac exercises the window.
+
+Known limitation: fonts are rasterized once at startup for the display the window opens on, so moving the window between a Retina and a non-Retina screen leaves the text slightly blurry until restart.
 
 ## 🚧 Current Limitations
 
