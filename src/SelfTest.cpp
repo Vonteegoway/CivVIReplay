@@ -189,9 +189,20 @@ int runSelfTest(int argc, char** argv)
 
 	// Database (LoadSave(true) with an empty queue loads it and returns)
 	loader.LoadSave(true);
-	info("database in use: " + str(loader.assets.database.path));
+	if (!loader.assets.database.warning.empty())
+		warn(loader.assets.database.warning);
+	if (!loader.fatalError.empty())
+		fail(loader.fatalError);
+	info("database in use: " + (loader.assets.database.path.empty() ? std::string("none") : str(loader.assets.database.path)));
 	int leaders = 0;
-	loader.assets.database.GetTable("Leaders", countRows, &leaders);
+	try
+	{
+		loader.assets.database.GetTable("Leaders", countRows, &leaders);
+	}
+	catch (const std::exception& e)
+	{
+		fail(std::string("database query failed: ") + e.what());
+	}
 	if (leaders > 0)
 		ok("database: " + std::to_string(leaders) + " leaders");
 	else
@@ -236,7 +247,15 @@ int runSelfTest(int argc, char** argv)
 		info("parsing " + s);
 		const int before = loader.loadedStateCount;
 		loader.paths.push(s);
-		loader.LoadSave_WithoutAsset(true);
+		try
+		{
+			loader.LoadSave_WithoutAsset(true);
+		}
+		catch (const std::exception& e)
+		{
+			fail(std::string("exception while parsing: ") + e.what());
+			continue;
+		}
 		if (loader.loadedStateCount == before)
 		{
 			fail("save produced no state: " + s);

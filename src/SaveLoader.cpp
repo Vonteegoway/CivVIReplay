@@ -418,7 +418,17 @@ void SaveLoader::LoadSave(bool untilEnd)
 
     //LogA("Trying to load Asset with : %s / %s", RootFolder.c_str(), WorkshopFolder.c_str());
 
-    assets.InitAll(RootFolder, WorkshopFolder);
+    try
+    {
+        assets.InitAll(RootFolder, WorkshopFolder);
+    }
+    catch (const std::exception& e)
+    {
+        fatalError = std::string("Could not load the gameplay database: ") + e.what();
+        fprintf(stderr, "%s\n", fatalError.c_str());
+        endLoadCivDb = true;
+        return;
+    }
     endLoadCivDb = true;
 
     LoadSave_WithoutAsset(untilEnd);

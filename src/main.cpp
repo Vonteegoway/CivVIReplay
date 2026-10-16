@@ -21,7 +21,20 @@ static int dumpSaves(int count, char** files)
         fprintf(stderr, "note: Civilization VI install not found\n");
     for (int i = 0; i < count; i++)
         loader.paths.push(files[i]);
-    loader.LoadSave(true);
+    try
+    {
+        loader.LoadSave(true);
+    }
+    catch (const std::exception& e)
+    {
+        fprintf(stderr, "error: %s\n", e.what());
+        return 1;
+    }
+    if (!loader.fatalError.empty())
+    {
+        fprintf(stderr, "error: %s\n", loader.fatalError.c_str());
+        return 1;
+    }
 
     printf("database: %s\n", loader.assets.database.path.u8string().c_str());
     printf("image assets: %zu / %zu database types\n", loader.assets.imageAssets.size(), loader.assets.assets.size());
@@ -53,7 +66,17 @@ static int run()
 
     loader.init();
 
-    std::thread first(&SaveLoader::LoadSave, &loader, false);
+    std::thread first([]() {
+        try
+        {
+            loader.LoadSave(false);
+        }
+        catch (const std::exception& e)
+        {
+            loader.fatalError = std::string("Unexpected error while loading: ") + e.what();
+            fprintf(stderr, "%s\n", loader.fatalError.c_str());
+        }
+    });
     Viewer v(1280, 720);
     loader.stop = true;
     first.join();

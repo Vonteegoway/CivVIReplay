@@ -658,6 +658,18 @@ bool civIsRunning()
 }
 
 void Viewer::DrawGUI(){
+    if (!loader.fatalError.empty())
+    {
+        ImGui::OpenPopup("CivVIReplay cannot start");
+        if (ImGui::BeginPopupModal("CivVIReplay cannot start", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
+        {
+            ImGui::TextWrapped("%s", loader.fatalError.c_str());
+            ImGui::Spacing();
+            ImGui::TextWrapped("Run \"CivVIReplay --selftest\" from a terminal for details. Log folder: %s", Platform::configDir().u8string().c_str());
+            ImGui::EndPopup();
+        }
+        return;
+    }
     if (!loader.isValidCivPath())
     {
         ImGui::OpenPopup("Steam or civilization path");
