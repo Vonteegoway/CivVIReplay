@@ -113,7 +113,7 @@ Paths are detected automatically:
 `--selftest` checks everything that does not need a human looking at the screen: assets, the config folder, Steam and Civ VI detection, the gameplay database, parsing of any saves you pass, and finally the window, OpenGL context and fonts, of which it saves a screenshot. It prints one line per check and ends with `RESULT: PASS` or `FAIL`. If you are testing the app on a Mac for the first time, run it from Terminal and send the output and the screenshot:
 
 ```bash
-/Applications/CivVIReplay.app/Contents/MacOS/CivVIReplay --selftest ~/Library/Application\ Support/Sid\ Meier\'s\ Civilization\ VI/Saves/Single/*.Civ6Save
+/Applications/CivVIReplay.app/Contents/MacOS/CivVIReplay --selftest ~/Library/Application\ Support/Sid\ Meier\'s\ Civilization\ VI/*/Saves/*/*.Civ6Save
 open ~/Library/Application\ Support/CivVIReplay/selftest.png
 ```
 
