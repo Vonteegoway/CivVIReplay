@@ -367,14 +367,14 @@ void SaveLoader::LoadSave_WithoutAsset(bool untilEnd)
 
 void SaveLoader::LoadSave(bool untilEnd)
 {
-    while (!isValidCivPath())
+    while (waitForCivPaths && !isValidCivPath())
     {
         std::this_thread::sleep_for(std::chrono::milliseconds(500));
         if (stop)
             return;
         continue;
     }
-    while (!isValidBBGPath())
+    while (waitForCivPaths && !isValidBBGPath())
     {
         std::this_thread::sleep_for(std::chrono::milliseconds(500));
         if (stop)

@@ -8,18 +8,17 @@
 #include <cstdlib>
 #include "Asset.h"
 #include "Platform.h"
+#include "SelfTest.h"
 
 SaveLoader loader;
 
 // Headless diagnostic: parse saves and print a summary, without opening a window.
 static int dumpSaves(int count, char** files)
 {
+    loader.waitForCivPaths = false; // parsing only needs the gameplay database
     loader.init();
     if (!loader.isValidCivPath())
-    {
-        fprintf(stderr, "Civilization VI install not found\n");
-        return 1;
-    }
+        fprintf(stderr, "note: Civilization VI install not found\n");
     for (int i = 0; i < count; i++)
         loader.paths.push(files[i]);
     loader.LoadSave(true);
@@ -65,12 +64,16 @@ static int run()
 int __stdcall WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, char* lpCmdLine, int nShowCmd) {
     if (__argc > 2 && !strcmp(__argv[1], "--dump"))
         return dumpSaves(__argc - 2, __argv + 2);
+    if (__argc > 1 && !strcmp(__argv[1], "--selftest"))
+        return runSelfTest(__argc - 2, __argv + 2);
     return run();
 }
 #else
 int main(int argc, char** argv) {
     if (argc > 2 && !strcmp(argv[1], "--dump"))
         return dumpSaves(argc - 2, argv + 2);
+    if (argc > 1 && !strcmp(argv[1], "--selftest"))
+        return runSelfTest(argc - 2, argv + 2);
     return run();
 }
 #endif

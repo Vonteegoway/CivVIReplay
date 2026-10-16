@@ -1,3 +1,7 @@
+#define STB_IMAGE_WRITE_IMPLEMENTATION
+#include "stb_image_write.h"
+#include <cstring>
+#include <vector>
 #include "Viewer.h"
 #include "Asset.h"
 #include <assert.h>
@@ -3048,16 +3052,48 @@ void Viewer::DrawPackets() {
 #endif
 }
 
+Viewer::SelfTest* Viewer::selfTest = nullptr;
+
 static void glfw_error_callback(int error, const char* description)
 {
     fprintf(stderr, "GLFW Error %d: %s\n", error, description);
+    if (Viewer::selfTest && Viewer::selfTest->error.empty())
+        Viewer::selfTest->error = description;
+}
+
+#ifndef GL_SHADING_LANGUAGE_VERSION
+#define GL_SHADING_LANGUAGE_VERSION 0x8B8C // not in the GL 1.1 header shipped with Windows
+#endif
+
+static bool saveScreenshot(const std::string& path, int width, int height)
+{
+    if (width <= 0 || height <= 0)
+        return false;
+    std::vector<unsigned char> pixels((size_t)width * height * 4);
+    glPixelStorei(GL_PACK_ALIGNMENT, 1);
+    glReadPixels(0, 0, width, height, GL_RGBA, GL_UNSIGNED_BYTE, pixels.data());
+    // OpenGL rows start at the bottom
+    std::vector<unsigned char> row((size_t)width * 4);
+    for (int y = 0; y < height / 2; y++)
+    {
+        unsigned char* top = pixels.data() + (size_t)y * width * 4;
+        unsigned char* bottom = pixels.data() + (size_t)(height - 1 - y) * width * 4;
+        memcpy(row.data(), top, row.size());
+        memcpy(top, bottom, row.size());
+        memcpy(bottom, row.data(), row.size());
+    }
+    return stbi_write_png(path.c_str(), width, height, 4, pixels.data(), width * 4) != 0;
 }
 
 void Viewer::Start(unsigned int Width, unsigned int Height) {
 
     glfwSetErrorCallback(glfw_error_callback);
     if (!glfwInit())
+    {
+        if (selfTest && selfTest->error.empty())
+            selfTest->error = "glfwInit failed";
         return;
+    }
 
 #ifdef __APPLE__
     // macOS only exposes OpenGL 3.2+ through a forward-compatible core profile
@@ -3075,6 +3111,8 @@ void Viewer::Start(unsigned int Width, unsigned int Height) {
     GLFWwindow* window = glfwCreateWindow(Width, Height, "CivReplay", nullptr, nullptr);
     if (!window)
     {
+        if (selfTest && selfTest->error.empty())
+            selfTest->error = "glfwCreateWindow failed";
         glfwTerminate();
         return;
     }
@@ -3126,7 +3164,21 @@ void Viewer::Start(unsigned int Width, unsigned int Height) {
 
     // Setup Platform/Renderer backends
     ImGui_ImplGlfw_InitForOpenGL(window, true);
-    ImGui_ImplOpenGL3_Init(glsl_version);
+    bool backendOk = ImGui_ImplOpenGL3_Init(glsl_version);
+    if (selfTest)
+    {
+        int winW = 0, winH = 0, fbW = 0, fbH = 0;
+        glfwGetWindowSize(window, &winW, &winH);
+        glfwGetFramebufferSize(window, &fbW, &fbH);
+        auto str = [](GLenum name) { const GLubyte* s = glGetString(name); return s ? (const char*)s : "?"; };
+        char info[1024];
+        snprintf(info, sizeof(info), "window %dx%d, framebuffer %dx%d (font scale %.2g), OpenGL %s, renderer %s, GLSL %s, requested %s",
+            winW, winH, fbW, fbH, fontScale, str(GL_VERSION), str(GL_RENDERER), str(GL_SHADING_LANGUAGE_VERSION), glsl_version);
+        selfTest->windowOk = true;
+        selfTest->backendOk = backendOk;
+        selfTest->glInfo = info;
+    }
+    int frameCount = 0;
 
     initIniHandler();
 
@@ -3156,6 +3208,12 @@ void Viewer::Start(unsigned int Width, unsigned int Height) {
         this->WinSize = io.DisplaySize; // window size in ImGui units (differs from the framebuffer on Retina)
         glClear(GL_COLOR_BUFFER_BIT);
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+
+        if (selfTest && ++frameCount == selfTest->frames)
+        {
+            selfTest->screenshotOk = saveScreenshot(selfTest->screenshotPath, display_w, display_h);
+            glfwSetWindowShouldClose(window, GLFW_TRUE);
+        }
 
         glfwSwapBuffers(window);
     }

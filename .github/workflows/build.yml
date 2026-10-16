@@ -11,11 +11,19 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Install dependencies
-        run: sudo apt-get update && sudo apt-get install -y cmake build-essential libglfw3-dev libgl-dev
+        run: sudo apt-get update && sudo apt-get install -y cmake build-essential libglfw3-dev libgl-dev xvfb
       - name: Configure
         run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
       - name: Build
         run: cmake --build build -j
+      - name: Self-test
+        run: xvfb-run -a -s "-screen 0 1280x720x24" ./build/CivVIReplay --selftest
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: selftest-linux
+          path: ~/.config/civvireplay/selftest.png
+          if-no-files-found: ignore
 
   macos:
     runs-on: macos-latest
@@ -27,6 +35,14 @@ jobs:
         run: cmake --build build -j3
       - name: Ad-hoc sign
         run: codesign --force --deep --sign - build/CivVIReplay.app
+      - name: Self-test
+        run: build/CivVIReplay.app/Contents/MacOS/CivVIReplay --selftest
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: selftest-macos
+          path: ~/Library/Application Support/CivVIReplay/selftest.png
+          if-no-files-found: ignore
       - name: Package
         run: ditto -c -k --keepParent build/CivVIReplay.app CivVIReplay-macOS.zip
       - uses: actions/upload-artifact@v4
@@ -42,6 +58,8 @@ jobs:
         run: cmake -S . -B build -A x64
       - name: Build
         run: cmake --build build --config Release -j
+      - name: Self-test (no window on the runner)
+        run: build\Release\CivVIReplay.exe --selftest --headless
       - uses: actions/upload-artifact@v4
         with:
           name: CivVIReplay-Windows

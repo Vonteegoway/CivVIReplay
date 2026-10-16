@@ -51,6 +51,7 @@ struct SaveLoader {
 	fs::path civPath = "C:/Program Files (x86)/Steam/SteamApps/common/Sid Meier's Civilization VI/";
 	fs::path bbgPath = "C:/Program Files (x86)/Steam/SteamApps/workshop/content/289070/";
 	bool steamInstall = false;
+	bool waitForCivPaths = true; // false: parse saves even when the Civ VI install / BBG folders are unknown
 	bool isValidBBGPath();
 	bool isValidCivPath();
 	fs::path RootFolder;

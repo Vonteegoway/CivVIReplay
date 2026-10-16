@@ -39,6 +39,20 @@ struct Viewer
 
 	static imgui_addons::ImGuiFileBrowser file_dialog;
 	static imgui_addons::ImGuiFileBrowser file_dialog_civ;
+
+	// Set before constructing a Viewer to run it as a self-test: it renders `frames` frames,
+	// saves a screenshot and closes. Results are written back into the struct.
+	struct SelfTest
+	{
+		int frames = 10;
+		std::string screenshotPath;
+		bool windowOk = false;
+		bool backendOk = false;
+		bool screenshotOk = false;
+		std::string glInfo;
+		std::string error;
+	};
+	static SelfTest* selfTest;
 	int iCurrentState;
 
 	bool bAutomatic;
